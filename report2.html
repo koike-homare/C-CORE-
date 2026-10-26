@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- report.html v20260617d -->
+<title>店舗別報告書</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   リセット・基本設定
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --suntory-navy: #1a3557;
+  --suntory-blue: #003087;
+  --suntory-blue-light: #0050b3;
+  --suntory-gold: #c8a45a;
+  --suntory-gold-light: #e8cc8a;
+  --gray-50: #f8f9fa;
+  --gray-100: #f0f1f3;
+  --gray-200: #e2e4e9;
+  --gray-400: #9ba3af;
+  --gray-600: #4b5563;
+  --gray-800: #1f2937;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  --accent-orange: #f59e0b;
+}
+
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif;
+  background: #e8eaed;
+  color: var(--gray-800);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ═══════════════════════════════════════
+   操作パネル（非印刷）
+═══════════════════════════════════════ */
+.control-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--suntory-blue);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.control-bar h1 {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+}
+.ctrl-select {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.ctrl-select option { color: #000; background: #fff; }
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+  white-space: nowrap;
+}
+.ctrl-btn:hover { opacity: .85; }
+.ctrl-btn--primary { background: var(--suntory-gold); color: #1a1a1a; }
+.ctrl-btn--secondary { background: rgba(255,255,255,.2); color: #fff; border: 1px solid rgba(255,255,255,.35); }
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,48,135,.85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 2000; color: #fff; gap: 16px;
+}
+.loading-overlay p { font-size: 15px; }
+.spinner { width: 44px; height: 44px; border: 4px solid rgba(255,255,255,.3); border-top-color: var(--suntory-gold); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════
+   A4ページ基本
+═══════════════════════════════════════ */
+.pages-wrap {
+  padding: 72px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,.18);
+  page-break-after: always;
+  break-after: page;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── ページ番号フッター ─── */
+.page-footer {
+  position: absolute;
+  bottom: 14mm;
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16mm;
+  font-size: 8px;
+  color: var(--gray-400);
+}
+.page-footer-line {
+  position: absolute;
+  bottom: 20mm;
+  left: 16mm; right: 16mm;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+/* ═══════════════════════════════════════
+   P1 トップページ（白ベース・爱やか）
+═══════════════════════════════════════ */
+.page--cover {
+  background: #ffffff;
+  overflow: hidden;
+}
+/* 背景装飾: 左辺のネイビー帯 + 右上の淡いサークル */
+.cover-side-bar {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 14mm;
+  background: linear-gradient(180deg, var(--suntory-blue) 0%, #0050b3 100%);
+}
+.cover-accent-dot {
+  position: absolute;
+  border-radius: 50%;
+  opacity: .06;
+  background: var(--suntory-blue);
+}
+.cover-accent-dot:nth-child(1) { width: 320px; height: 320px; right: -60px; top: -60px; }
+.cover-accent-dot:nth-child(2) { width: 180px; height: 180px; right: 80px;  top: 60px;  opacity: .04; }
+.cover-accent-dot:nth-child(3) { width: 220px; height: 220px; right: -40px; bottom: 20px; opacity: .05; }
+/* 左辺の垂直テキスト */
+.cover-side-text {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 14mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+}
+.cover-side-text span {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  color: rgba(255,255,255,.75);
+  text-transform: uppercase;
+}
+
+.cover-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 18mm 16mm 16mm 28mm;
+}
+
+/* ロゴエリア */
+.cover-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: auto;
+  padding-bottom: 6mm;
+  border-bottom: 1px solid var(--gray-200);
+}
+/* Collectionロゴ */
+.cover-collection-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.cover-collection-icon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--suntory-blue), #1e6fd9);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff;
+  box-shadow: 0 2px 8px rgba(0,48,135,.22);
+  flex-shrink: 0;
+}
+.cover-collection-wordmark { display: flex; flex-direction: column; }
+.cover-collection-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--suntory-blue);
+  letter-spacing: .04em;
+  line-height: 1.1;
+}
+.cover-collection-tagline {
+  font-size: 8.5px;
+  color: var(--gray-400);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+/* セパレーター */
+.cover-logo-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--gray-200);
+  margin: 0 14px;
+  flex-shrink: 0;
+}
+/* クライアント名ブロック */
+.cover-client-block { display: flex; flex-direction: column; }
+.cover-client-label {
+  font-size: 8px;
+  color: var(--gray-400);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.cover-client-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-800);
+  line-height: 1.3;
+}
+
+/* ゴールドライン */
+.cover-gold-line {
+  width: 48px; height: 4px;
+  background: linear-gradient(90deg, var(--suntory-blue), #93c5fd);
+  margin: 0 0 8mm;
+  border-radius: 2px;
+}
+
+.cover-doc-label {
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  color: var(--suntory-blue);
+  text-transform: uppercase;
+  margin-bottom: 4mm;
+  font-weight: 700;
+  opacity: .6;
+}
+
+.cover-title {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--gray-800);
+  line-height: 1.2;
+  letter-spacing: .01em;
+  margin-bottom: 6mm;
+}
+.cover-title span { color: var(--suntory-blue); }
+
+.cover-subtitle {
+  font-size: 13px;
+  color: var(--gray-600);
+  margin-bottom: 12mm;
+  line-height: 1.7;
+  padding: 6px 12px;
+  background: var(--gray-50);
+  border-left: 3px solid var(--suntory-blue);
+  border-radius: 0 6px 6px 0;
+}
+
+.cover-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
+  margin-bottom: 10mm;
+  padding: 7mm 0;
+  border-top: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-200);
+}
+.cover-info-item label {
+  display: block;
+  font-size: 9px;
+  color: var(--suntory-blue);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  font-weight: 700;
+  opacity: .7;
+}
+.cover-info-item span {
+  font-size: 13px;
+  color: var(--gray-800);
+  font-weight: 700;
+}
+
+.cover-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.cover-confidential {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: var(--suntory-blue);
+  font-size: 10px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  letter-spacing: .08em;
+  font-weight: 700;
+}
+.cover-bottom-brand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--gray-400);
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.cover-page-num {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+/* ═══════════════════════════════════════
+   P2 サマリページ
+═══════════════════════════════════════ */
+.page--summary .page-header {
+  background: var(--suntory-blue);
+  padding: 9mm 16mm 8mm;
+  color: #fff;
+}
+.page-header-eyebrow {
+  font-size: 9px;
+  letter-spacing: .15em;
+  color: var(--suntory-gold);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.page-header-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+}
+.page-header-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,.65);
+  margin-top: 3px;
+}
+
+.summary-body {
+  flex: 1;
+  padding: 8mm 16mm 0;
+  overflow: hidden;
+}
+
+/* KPIカード列 */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 7mm;
+}
+.kpi-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 10px 12px 11px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--suntory-blue);
+}
+.kpi-card.kpi--reach::before  { background: #3b82f6; }
+.kpi-card.kpi--likes::before  { background: #ec4899; }
+.kpi-card.kpi--saves::before  { background: #8b5cf6; }
+.kpi-card.kpi--er::before     { background: #10b981; }
+.kpi-card.kpi--total::before  { background: var(--suntory-gold); }
+.kpi-card.kpi--cost::before   { background: #7c3aed; }
+.kpi-card.kpi--visit::before  { background: #f97316; }
+.kpi-card.kpi--sales::before  { background: #0ea5e9; }
+.kpi-card.kpi--roas::before   { background: #e11d48; }
+/* 2行目KPIカード（来店・売上・ROAS）— 背景をやや異なるトーンで区別 */
+.kpi-row2 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 4mm;
+}
+.kpi-row2 .kpi-card {
+  background: #fffbf5;
+  border-color: #fde68a;
+}
+.kpi-row2 .kpi-value { font-size: 17px; }
+.kpi-row2 .kpi-unit  { font-size: 9px; }
+/* 客単価帯注釈 */
+.kpi-price-note {
+  font-size: 8.5px;
+  color: var(--gray-400);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+/* 未設定時の薄いテキスト */
+.kpi-na {
+  font-size: 11px;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+.kpi-label {
+  font-size: 9px;
+  color: var(--gray-400);
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+}
+.kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gray-800);
+  line-height: 1.1;
+}
+.kpi-value.kpi-value--sm { font-size: 18px; }
+.kpi-unit {
+  font-size: 10px;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+/* サマリ総評コメントボックス */
+.summary-comment-box {
+  margin: 5mm 0 4mm;
+  background: linear-gradient(135deg, #f0f7ff 0%, #fafcff 100%);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid var(--suntory-blue);
+  border-radius: 0 8px 8px 0;
+  padding: 5px 13px 7px;
+}
+.summary-comment-header {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: var(--suntory-blue);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.summary-comment-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.summary-comment-body p {
+  font-size: 9.5px;
+  color: var(--gray-600);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* サマリテーブル */
+.summary-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--suntory-blue);
+  letter-spacing: .05em;
+  margin-bottom: 5px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid var(--suntory-blue);
+  display: flex; align-items: center; gap: 6px;
+}
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.summary-table thead tr {
+  background: var(--suntory-blue);
+  color: #fff;
+}
+.summary-table thead th {
+  padding: 5px 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: .03em;
+}
+.summary-table thead th:first-child { text-align: left; }
+.summary-table tbody tr { border-bottom: 1px solid var(--gray-100); }
+.summary-table tbody tr:nth-child(even) { background: var(--gray-50); }
+.summary-table tbody td {
+  padding: 5px 8px;
+  text-align: center;
+  color: var(--gray-600);
+  vertical-align: middle;
+}
+.summary-table tbody td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-800);
+  max-width: 120px;
+}
+.summary-table .num { font-weight: 700; color: var(--gray-800); }
+.summary-table .er-badge {
+  display: inline-block;
+  background: #d1fae5;
+  color: #059669;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+}
+.sns-badge-mini {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #f0f0f0; border-radius: 4px; padding: 1px 5px;
+  font-size: 9px; color: #555;
+}
+.sns-ig { background: #fce4ec; color: #c2185b; }
+.sns-tt { background: #e0f2f1; color: #00897b; }
+.sns-yt { background: #ffebee; color: #c62828; }
+.sns-tw { background: #e3f2fd; color: #1565c0; }
+
+/* ═══════════════════════════════════════
+   P3以降 結果ページ
+═══════════════════════════════════════ */
+.page--result .page-header {
+  background: var(--suntory-blue);
+  padding: 7mm 16mm 6mm;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+.page-header-store-num {
+  font-size: 36px;
+  font-weight: 800;
+  color: rgba(255,255,255,.25);
+  line-height: 1;
+  margin-right: 4px;
+}
+.page-header-store-info { flex: 1; }
+.page-header-store-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+.page-header-store-sub {
+  font-size: 10px;
+  color: rgba(255,255,255,.6);
+  margin-top: 2px;
+}
+.page-header-badge {
+  background: var(--suntory-gold);
+  color: #1a1a1a;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: .05em;
+  white-space: nowrap;
+}
+
+.result-body {
+  flex: 1;
+  padding: 6mm 16mm 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+  overflow: hidden;
+}
+
+/* インフルエンサー基本情報 */
+.inf-profile-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.inf-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--gray-400);
+  border: 2px solid var(--gray-200);
+}
+.inf-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.inf-profile-main { flex: 1; }
+.inf-profile-name {
+  font-size: 15px; font-weight: 800; color: var(--gray-800);
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 3px;
+}
+.inf-profile-sub { font-size: 10px; color: var(--gray-400); }
+.inf-meta-row {
+  display: flex; gap: 8px; margin-top: 5px; flex-wrap: wrap;
+}
+.inf-meta-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #fff; border: 1px solid var(--gray-200);
+  border-radius: 5px; padding: 2px 8px;
+  font-size: 10px; color: var(--gray-600);
+}
+.inf-followers-big {
+  text-align: center;
+  flex-shrink: 0;
+  background: var(--suntory-blue);
+  border-radius: 10px;
+  padding: 8px 16px;
+  min-width: 90px;
+}
+.inf-followers-big .val {
+  font-size: 22px; font-weight: 800; color: #fff; line-height: 1;
+}
+.inf-followers-big .lbl {
+  font-size: 9px; color: rgba(255,255,255,.6); margin-top: 3px;
+}
+
+/* インサイトKPIグリッド */
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+/* ── SNSブロック（全SNS対応） ── */
+.sns-insight-block {
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sns-insight-block + .sns-insight-block {
+  margin-top: 5px;
+}
+.sns-block-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #fff;
+}
+.sns-block-header.ig  { background: linear-gradient(135deg,#c2185b,#e91e8c); }
+.sns-block-header.tt  { background: linear-gradient(135deg,#010101,#2d2d2d); }
+.sns-block-header.yt  { background: linear-gradient(135deg,#c62828,#ff0000); }
+.sns-block-header.tw  { background: linear-gradient(135deg,#1565c0,#1da1f2); }
+.sns-block-header.x   { background: linear-gradient(135deg,#14171a,#3a3a3a); }
+.sns-block-header.def { background: linear-gradient(135deg,#4b5563,#6b7280); }
+.sns-block-header .sns-main-star {
+  background: rgba(255,255,255,.25);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-weight: 700;
+}
+.sns-block-body {
+  padding: 5px 8px 6px;
+  background: var(--gray-50);
+}
+.sns-block-body .insight-grid {
+  gap: 4px;
+}
+.sns-block-body .insight-card {
+  padding: 6px 6px 7px;
+}
+.sns-block-body .insight-val {
+  font-size: 15px;
+}
+.sns-block-body .insight-lbl {
+  font-size: 8px;
+}
+.sns-block-er {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 5px;
+  padding: 2px 8px;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+}
+.sns-no-data {
+  padding: 8px 10px;
+  font-size: 10px;
+  color: var(--gray-400);
+  background: var(--gray-50);
+  font-style: italic;
+}
+
+/* ── SNSコンパクトテーブル（個別報告書用） ── */
+.sns-compact-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sns-compact-table thead tr {
+  background: var(--suntory-navy);
+  color: #fff;
+}
+.sns-compact-table thead th {
+  padding: 5px 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+/* ── ヘッダー行（thead代替・td使用） ── */
+.sns-hdr-row {
+  background: var(--suntory-navy);
+  color: #fff;
+}
+.sns-hdr-cell {
+  padding: 5px 8px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  color: #fff;
+}
+.sns-compact-table th.sns-compact-name,
+.sns-compact-table td.sns-compact-name {
+  text-align: left;
+  width: 120px;
+}
+.sns-compact-table th.sns-compact-num,
+.sns-compact-table td.sns-compact-num {
+  text-align: right;
+  padding-right: 10px;
+}
+.sns-compact-table th.sns-compact-er,
+.sns-compact-table td.sns-compact-er {
+  text-align: center;
+  width: 60px;
+}
+/* 合計行 */
+.sns-compact-total td {
+  background: #f0f4ff;
+  border-top: 2px solid var(--suntory-navy);
+  border-bottom: 1px solid #c7d2fe;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--suntory-navy);
+}
+/* SNSサブ行 */
+.sns-compact-sub td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-600);
+  font-size: 10px;
+}
+.sns-compact-sub:last-child td {
+  border-bottom: none;
+}
+/* メインSNS行は少し強調 */
+.sns-compact-sub--main td {
+  background: #fafafa;
+  color: var(--gray-800);
+  font-weight: 600;
+}
+/* SNSバッジ（サブ行用） */
+.sns-compact-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* ER バッジ小サイズ */
+.er-badge--sm {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+.insight-card {
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 8px 10px 9px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.insight-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+}
+.insight-card.ic--reach::after  { background: #3b82f6; }
+.insight-card.ic--imp::after    { background: #6366f1; }
+.insight-card.ic--likes::after  { background: #ec4899; }
+.insight-card.ic--comments::after { background: #f59e0b; }
+.insight-card.ic--saves::after  { background: #8b5cf6; }
+.insight-card.ic--er::after     { background: #10b981; }
+.insight-icon {
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+.insight-card.ic--reach   .insight-icon { color: #3b82f6; }
+.insight-card.ic--imp     .insight-icon { color: #6366f1; }
+.insight-card.ic--likes   .insight-icon { color: #ec4899; }
+.insight-card.ic--comments .insight-icon { color: #f59e0b; }
+.insight-card.ic--saves   .insight-icon { color: #8b5cf6; }
+.insight-card.ic--er      .insight-icon { color: #10b981; }
+.insight-val {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--gray-800);
+  line-height: 1.1;
+}
+.insight-val.insight-val--sm { font-size: 15px; }
+.insight-lbl {
+  font-size: 9px;
+  color: var(--gray-400);
+  margin-top: 2px;
+}
+
+/* 投稿情報・URL */
+.post-info-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 10px;
+}
+.post-info-item {
+  display: flex; align-items: center; gap: 5px;
+  color: var(--gray-600);
+}
+.post-info-item i { color: var(--suntory-blue); }
+.post-info-url {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #2563eb;
+  font-size: 10px;
+}
+
+/* 分析コメント */
+.analysis-box {
+  background: linear-gradient(135deg, #eff6ff 0%, #f8f9ff 100%);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid var(--suntory-blue);
+  border-radius: 0 8px 8px 0;
+  padding: 8px 12px;
+}
+.analysis-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--suntory-blue);
+  margin-bottom: 5px;
+  display: flex; align-items: center; gap: 5px;
+}
+.analysis-text {
+  font-size: 10px;
+  color: var(--gray-600);
+  line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════
+   画像キャンバスエリア
+═══════════════════════════════════════ */
+.image-canvas {
+  height: 118mm;
+  border: 2px dashed var(--gray-200);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  background: var(--gray-50);
+  margin: 0 16mm 6mm;
+  flex-shrink: 0;
+  transition: border-color .2s, background .2s;
+}
+.image-canvas.drag-over {
+  border-color: var(--suntory-blue);
+  background: #eff6ff;
+}
+/* ヒント（画像未追加時のみ表示） */
+.image-canvas-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--gray-400);
+  pointer-events: none;
+  transition: opacity .2s;
+}
+.image-canvas-hint i { font-size: 28px; }
+.image-canvas-hint p { font-size: 11px; font-weight: 600; }
+.image-canvas-hint small { font-size: 10px; }
+.image-canvas.has-images .image-canvas-hint { opacity: 0; }
+
+/* ＋ボタン */
+.img-add-btn {
+  position: absolute;
+  bottom: 10px; left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--suntory-blue);
+  color: #fff;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  z-index: 10;
+  transition: opacity .15s;
+}
+.img-add-btn:hover { opacity: .85; }
+
+/* 全削除ボタン */
+.img-clear-btn {
+  position: absolute;
+  bottom: 10px; right: 12px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 10;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.img-clear-btn:hover { background: #fecaca; }
+.image-canvas.has-images .img-clear-btn { display: inline-flex; }
+
+/* ページ削除ボタン（非印刷） */
+.page-delete-btn {
+  position: absolute;
+  top: 8px; right: 10px;
+  background: rgba(255,255,255,0.95);
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 200;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background .15s, box-shadow .15s;
+  box-shadow: 0 2px 6px rgba(220,38,38,.18);
+}
+.page-delete-btn:hover { background: #fee2e2; box-shadow: 0 3px 10px rgba(220,38,38,.28); }
+.page--result { position: relative; }
+
+/* 配置画像アイテム */
+.placed-img {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,.18);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: border-color .15s;
+}
+.placed-img:hover,
+.placed-img.selected {
+  border-color: var(--suntory-blue);
+  box-shadow: 0 4px 16px rgba(0,48,135,.25);
+}
+.placed-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+/* リサイズハンドル */
+.resize-handle {
+  position: absolute;
+  width: 12px; height: 12px;
+  background: var(--suntory-blue);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  z-index: 5;
+  cursor: nwse-resize;
+  bottom: -6px; right: -6px;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.placed-img.selected .resize-handle,
+.placed-img:hover .resize-handle { opacity: 1; }
+/* 削除ハンドル */
+.delete-handle {
+  position: absolute;
+  top: -8px; right: -8px;
+  width: 18px; height: 18px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  opacity: 0;
+  transition: opacity .15s;
+  border: 2px solid #fff;
+  line-height: 1;
+}
+.placed-img.selected .delete-handle,
+.placed-img:hover .delete-handle { opacity: 1; }
+
+/* ─── セクションラベル ─── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--suntory-blue);
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+  display: flex; align-items: center; gap: 5px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+/* ═══════════════════════════════════════
+   印刷用
+═══════════════════════════════════════ */
+@media print {
+  body { background: #fff !important; }
+  .control-bar, .loading-overlay { display: none !important; }
+  .no-print { display: none !important; }
+  .pages-wrap { padding: 0; gap: 0; }
+  .page {
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+    margin: 0;
+  }
+  .image-canvas {
+    border: 1px solid #e0e0e0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .placed-img { border-color: transparent !important; }
+  .resize-handle, .delete-handle { display: none !important; }
+}
+
+/* ── 空状態 ── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; color: var(--gray-400);
+  min-height: 300px;
+}
+.empty-state i { font-size: 48px; }
+.empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 操作バー -->
+<div class="control-bar">
+  <h1><i class="fas fa-file-alt" style="margin-right:8px; color:var(--suntory-gold);"></i>店舗別報告書ジェネレーター</h1>
+  <label style="color:rgba(255,255,255,.7);font-size:12px;">案件：</label>
+  <select class="ctrl-select" id="projectSelect">
+    <option value="">— 案件を選択 —</option>
+  </select>
+  <button class="ctrl-btn ctrl-btn--secondary" id="btnGenerate">
+    <i class="fas fa-sync-alt"></i> 報告書を生成
+  </button>
+  <button class="ctrl-btn ctrl-btn--primary" id="btnPrint">
+    <i class="fas fa-print"></i> 印刷 / PDF出力
+  </button>
+</div>
+
+<!-- ローディング -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>データを取得中...</p>
+</div>
+
+<!-- ページ出力エリア -->
+<div class="pages-wrap" id="pagesWrap">
+  <div class="empty-state">
+    <i class="fas fa-file-invoice" style="color:var(--gray-300);"></i>
+    <p>案件を選択して「報告書を生成」を押してください</p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  API ヘルパー
+// ══════════════════════════════════════
+const API = {
+  async get(table, params = {}) {
+    const q = new URLSearchParams({ limit: 500, ...params }).toString();
+    const res = await fetch(`tables/${table}?${q}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  },
+  async getOne(table, id) {
+    const res = await fetch(`tables/${table}/${encodeURIComponent(id)}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  },
+  // 全件ページネーション取得（total比較方式・100件API上限対応）
+  // pageSize: 画像等大データを含むテーブルは小さい値を指定（influencers は 20）
+  async getAll(table, params = {}, pageSize = 100) {
+    let page = 1;
+    const limit = pageSize;
+    let allData = [];
+    while (true) {
+      const q = new URLSearchParams({ limit, page, ...params }).toString();
+      const res = await fetch(`tables/${table}?${q}`);
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+      const json = await res.json();
+      const rows = json.data || [];
+      allData = allData.concat(rows);
+      if (allData.length >= (json.total || 0) || rows.length === 0) break;
+      page++;
+    }
+    return { data: allData, total: allData.length };
+  },
+};
+
+// ══════════════════════════════════════
+//  ユーティリティ
+// ══════════════════════════════════════
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtNum  = n => (n == null || n === '') ? '—' : Number(n).toLocaleString();
+const fmtFollowers = n => {
+  const v = Number(n) || 0;
+  if (v >= 10000) return (v / 10000).toFixed(1).replace(/\.0$/,'') + '万';
+  return v.toLocaleString();
+};
+const fmtDate = s => {
+  if (!s) return '—';
+  return s.replace(/T.+/,'').replace(/-/g,'/');
+};
+
+function calcER(reach, likes, comments, saves) {
+  const r = Number(reach)||0, l = Number(likes)||0, c = Number(comments)||0, s = Number(saves)||0;
+  if (r <= 0) return null;
+  return ((l + c + s) / r * 100).toFixed(2);
+}
+
+function snsBadgeHtml(sns) {
+  if (!sns) return '';
+  const map = {
+    'Instagram': ['sns-ig','fa-instagram','IG'],
+    'TikTok':    ['sns-tt','fa-tiktok','TT'],
+    'YouTube':   ['sns-yt','fa-youtube','YT'],
+    'Twitter':   ['sns-tw','fa-twitter','TW'],
+    'X':         ['sns-tw','fa-x-twitter','X'],
+  };
+  const [cls, icon, label] = map[sns] || ['','fa-globe',sns];
+  return `<span class="sns-badge-mini ${cls}"><i class="fab ${icon}"></i> ${label}</span>`;
+}
+
+// ── SNSタイプをパース "Instagram*,TikTok" → [{name, isMain}, ...] ──
+function parseSnsType(snsType) {
+  if (!snsType) return [];
+  const raw = snsType.split(',').map(s => s.trim()).filter(Boolean);
+  const items = raw.map(s => ({ name: s.endsWith('*') ? s.slice(0,-1) : s, isMain: s.endsWith('*') }));
+  if (items.length > 0 && !items.some(i => i.isMain)) items[0].isMain = true;
+  return items;
+}
+
+// ── 全SNSのインサイトデータを配列で返す ──
+// 戻り値: [{ snsName, isMain, reach, likes, comments, saves }, ...]
+function getAllSnsInsights(assign, inf) {
+  const snsList = parseSnsType(inf ? inf.sns_type : '');
+
+  // sns_insights (JSON) があれば優先
+  let insightsDB = {};
+  if (assign.sns_insights) {
+    try {
+      insightsDB = typeof assign.sns_insights === 'string'
+        ? JSON.parse(assign.sns_insights) : assign.sns_insights;
+    } catch(e) {}
+  }
+
+  const hasDB = Object.keys(insightsDB).length > 0;
+
+  // SNS登録がない場合は旧フィールドで1件返す
+  if (snsList.length === 0) {
+    return [{
+      snsName : '—',
+      isMain  : true,
+      reach   : Number(assign.reach)    || 0,
+      likes   : Number(assign.likes)    || 0,
+      comments: Number(assign.comments) || 0,
+      saves   : Number(assign.saves)    || 0,
+    }];
+  }
+
+  return snsList.map(s => {
+    let d;
+    if (hasDB && insightsDB[s.name]) {
+      d = insightsDB[s.name];
+    } else if (s.isMain) {
+      // メインSNSは旧フィールドにフォールバック
+      d = { reach: Number(assign.reach)||0, likes: Number(assign.likes)||0,
+            comments: Number(assign.comments)||0, saves: Number(assign.saves)||0 };
+    } else {
+      d = { reach: 0, likes: 0, comments: 0, saves: 0 };
+    }
+    return {
+      snsName : s.name,
+      isMain  : s.isMain,
+      reach   : Number(d.reach)    || 0,
+      likes   : Number(d.likes)    || 0,
+      comments: Number(d.comments) || 0,
+      saves   : Number(d.saves)    || 0,
+    };
+  });
+}
+
+// ── 後方互換: メインSNSのデータ1件を返す（generateAnalysis 用） ──
+function getInsightData(assign, inf) {
+  const all = getAllSnsInsights(assign, inf);
+  return all.find(s => s.isMain) || all[0] || { reach:0, likes:0, comments:0, saves:0 };
+}
+
+// ── 客単価帯テキスト → 代表単価（円）変換 ──
+// 「〜1,999円」→ 1500 / 「2,000円〜3,999円」→ 3000 / ...
+function priceRangeToAvg(pr) {
+  if (!pr) return null;
+  if (/^〜1[,，]?999|^1[,，]?999/.test(pr)) return 1500;
+  if (/^2[,，]?000.*3[,，]?999|^2[,，]?000/.test(pr)) return 3000;
+  if (/^4[,，]?000.*5[,，]?999|^4[,，]?000/.test(pr)) return 5000;
+  if (/^6[,，]?000.*7[,，]?999|^6[,，]?000/.test(pr)) return 7000;
+  if (/^8[,，]?000.*9[,，]?999|^8[,，]?000/.test(pr)) return 9000;
+  if (/^10[,，]?000/.test(pr)) return 12000;
+  return null;
+}
+
+// ── 来店期待数・想定関与売上・ROAS 計算 ──
+// 来店期待数 = totalSaves × 10%
+// 想定関与売上 = 来店期待数（グループ数） × 2.5人 × 客単価
+// ROAS = 想定関与売上 ÷ 予算 × 100
+function calcBusinessMetrics(totalSaves, priceRange, budget) {
+  const avgPrice = priceRangeToAvg(priceRange);
+  const expectedGroups   = Math.round(totalSaves * 0.10);          // 来店グループ数
+  const expectedVisitors = Math.round(expectedGroups * 2.5);       // 来店人数（1組2.5人）
+  const estimatedSales   = avgPrice !== null ? expectedVisitors * avgPrice : null;
+  const roas             = (estimatedSales !== null && budget > 0)
+                            ? Math.round(estimatedSales / budget * 100) : null;
+  return { avgPrice, expectedGroups, expectedVisitors, estimatedSales, roas };
+}
+
+// ── 分析テキスト自動生成（店舗・インフルエンサー固有） ──
+function generateAnalysis(inf, insight, storeName) {
+  const er       = calcER(insight.reach, insight.likes, insight.comments, insight.saves);
+  const lines    = [];
+  const name     = inf.name  || 'インフルエンサー';
+  const store    = storeName || '当店舗';
+  const fol      = Number(inf.followers) || 0;
+  const reach    = Number(insight.reach)    || 0;
+  const likes    = Number(insight.likes)    || 0;
+  const saves    = Number(insight.saves)    || 0;
+  const comments = Number(insight.comments) || 0;
+
+  // データなしの場合
+  if (reach === 0 && likes === 0 && saves === 0 && comments === 0) {
+    return `担当した ${name} の投稿が確認されました。インサイトデータが登録され次第、詳細な分析を追記予定です。`;
+  }
+
+  // ① リーチ数・リーチ率
+  if (reach > 0) {
+    const reachRate = fol > 0 ? ((reach / fol) * 100).toFixed(1) : null;
+    if (reachRate) {
+      const level = Number(reachRate) >= 30 ? '非常に高い' : Number(reachRate) >= 15 ? '良好な' : '標準的な';
+      lines.push(`担当した ${name} の投稿はリーチ数 ${fmtNum(reach)} を記録し、フォロワー比でのリーチ率は ${reachRate}%（${level}水準）でした。`);
+    } else {
+      lines.push(`担当した ${name} の投稿はリーチ数 ${fmtNum(reach)} を記録しました。`);
+    }
+  }
+
+  // ② エンゲージメント率
+  if (er !== null) {
+    const erNum = Number(er);
+    const erLevel = erNum >= 6 ? '非常に高いエンゲージメントを獲得し、フォロワーの強い関心を引きつけました' :
+                    erNum >= 4 ? '良好なエンゲージメントを維持し、ターゲット層への訴求効果が発揮されました' :
+                    erNum >= 2 ? '安定したエンゲージメントが確認されました' :
+                                 `エンゲージメント率は ${er}% を記録しました`;
+    const erSuffix = erNum < 2 ? '。' : '。';
+    lines.push(`ER（エンゲージメント率）は ${er}% で、${erLevel}${erSuffix}`);
+  }
+
+  // ③ 保存率
+  if (saves > 0 && reach > 0) {
+    const saveRate = ((saves / reach) * 100).toFixed(2);
+    const saveLevel = Number(saveRate) >= 3 ? '保存率が高く、後日再参照されるほど有用な情報として認識された投稿' :
+                      Number(saveRate) >= 1 ? '一定の保存が確認された、情報保存価値のある投稿' :
+                                             `保存数 ${fmtNum(saves)} が記録されました`;
+    const saveSuffix = Number(saveRate) < 1 ? '。' : 'です。';
+    lines.push(`保存数は ${fmtNum(saves)}（保存率 ${saveRate}%）。${saveLevel}${saveSuffix}`);
+  }
+
+  // ④ いいね・コメント比率
+  if (likes > 0 && comments > 0) {
+    const ratio = (likes / comments).toFixed(0);
+    const commLevel = Number(ratio) <= 20 ? '特にコメントが活発で双方向コミュニケーションが促進されました' :
+                      '標準的な比率でいいねを中心に反応が得られました';
+    lines.push(`いいね ${fmtNum(likes)}・コメント ${fmtNum(comments)} で比率は ${ratio}:1。${commLevel}。`);
+  } else if (likes > 0) {
+    lines.push(`いいね数 ${fmtNum(likes)} を獲得し、投稿への好意的な反応が確認されました。`);
+  }
+
+  // フォールバック（reach だけあるケース）
+  if (lines.length <= 1 && reach > 0) {
+    lines.push(`引き続き投稿後の反応を観察してまいります。`);
+  }
+  if (lines.length === 0) {
+    lines.push(`${store} の施策結果として、詳細なインサイトデータが揃い次第、更新予定です。`);
+  }
+  return lines.join(' ');
+}
+
+// ══════════════════════════════════════
+//  ページ生成
+// ══════════════════════════════════════
+
+function buildCoverPage(project, client, totalAssigns, issuedDate) {
+  const period = [project.start_date, project.end_date].filter(Boolean).map(d => d.replace(/-/g,'/')).join(' 〜 ');
+  return `
+  <div class="page page--cover">
+    <!-- 左辺ネイビーバー -->
+    <div class="cover-side-bar"></div>
+    <div class="cover-side-text"><span>Influencer Marketing Report</span></div>
+    <!-- 背景サークル装飾 -->
+    <div class="cover-accent-dot"></div>
+    <div class="cover-accent-dot"></div>
+    <div class="cover-accent-dot"></div>
+
+    <div class="cover-body">
+      <!-- ロゴエリア -->
+      <div class="cover-logo-area">
+        <!-- Collectionロゴ -->
+        <div class="cover-collection-logo">
+          <div class="cover-collection-icon"><i class="fas fa-layer-group"></i></div>
+          <div class="cover-collection-wordmark">
+            <span class="cover-collection-name">Collection</span>
+            <span class="cover-collection-tagline">Influencer Marketing Platform</span>
+          </div>
+        </div>
+        <!-- セパレーター -->
+        <div class="cover-logo-sep"></div>
+        <!-- クライアント名 -->
+        <div class="cover-client-block">
+          <div class="cover-client-label">prepared for</div>
+          <div class="cover-client-name">${esc(client || 'クライアント')}</div>
+        </div>
+      </div>
+
+      <!-- メインコンテンツ -->
+      <div style="margin-top: 16mm;">
+        <div class="cover-gold-line"></div>
+        <div class="cover-doc-label">Store-by-Store Report</div>
+        <div class="cover-title">
+          店舗別インフルエンサー<br><span>施策結果報告書</span>
+        </div>
+        <div class="cover-subtitle">
+          ${esc(project.project_name || '')}
+        </div>
+        <div class="cover-info-grid">
+          <div class="cover-info-item">
+            <label>Period</label>
+            <span>${esc(period || '—')}</span>
+          </div>
+          <div class="cover-info-item">
+            <label>Total Influencers</label>
+            <span>${totalAssigns}名</span>
+          </div>
+          <div class="cover-info-item">
+            <label>Client</label>
+            <span>${esc(client || '—')}</span>
+          </div>
+          <div class="cover-info-item">
+            <label>Issue Date</label>
+            <span>${esc(issuedDate)}</span>
+          </div>
+        </div>
+        <div class="cover-bottom">
+          <span class="cover-confidential">
+            <i class="fas fa-lock"></i> CONFIDENTIAL
+          </span>
+          <div class="cover-bottom-brand">
+            <i class="fas fa-layer-group" style="color:var(--suntory-blue);opacity:.4;"></i>
+            <span>Collection</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── サマリ評価コメント自動生成 ──
+function buildSummaryComment(count, reach, likes, saves, comments, erStr) {
+  const er = erStr !== '—' ? Number(erStr) : null;
+  const avgReach = count > 0 ? Math.round(reach / count) : 0;
+  const saveRate = reach > 0 ? (saves / reach * 100) : 0;
+  const lines = [];
+
+  // ① 総リーチ評価
+  if (reach > 0) {
+    const reachLabel = reach >= 1000000 ? '100万を超える'
+                     : reach >= 500000  ? '50万を超える大きな'
+                     : reach >= 100000  ? '10万を超える'
+                     : reach >= 50000   ? '5万を超える'
+                     : '確かな';
+    lines.push(`本施策では ${count} 名のインフルエンサーが参加し、総リーチ数 ${fmtNum(reach)} という${reachLabel}露出を実現しました。`);
+  } else {
+    lines.push(`本施策では ${count} 名のインフルエンサーが参加しました。`);
+  }
+
+  // ② ER評価
+  if (er !== null) {
+    const erComment = er >= 5  ? `平均ER ${erStr}% は業界水準を大きく上回る非常に高い数値であり、強い共感・関心を獲得できた施策となりました。`
+                    : er >= 3  ? `平均ER ${erStr}% は業界平均を上回る良好な水準であり、ターゲット層への訴求が効果的に機能しました。`
+                    : er >= 1.5? `平均ER ${erStr}% は安定した水準を維持しており、継続的な認知拡大に貢献しました。`
+                    :            `平均ER ${erStr}% が記録されました。リーチ規模の大きい投稿が多く含まれており、広範な認知獲得につながっています。`;
+    lines.push(erComment);
+  }
+
+  // ③ 保存率評価
+  if (saves > 0 && reach > 0) {
+    const saveComment = saveRate >= 3  ? `保存数 ${fmtNum(saves)} は保存率 ${saveRate.toFixed(2)}% に相当し、投稿が「また見返したい」と思われる高品質なコンテンツとして評価された結果です。`
+                      : saveRate >= 1  ? `保存数 ${fmtNum(saves)}（保存率 ${saveRate.toFixed(2)}%）が記録されており、情報収集・保存行動として投稿への関心の高さが示されています。`
+                      :                  `保存数 ${fmtNum(saves)} が記録されました。いいねやコメントと合わせ、多様なエンゲージメントが獲得できています。`;
+    lines.push(saveComment);
+  }
+
+  // ④ いいね・コメント
+  if (likes > 0) {
+    const intComment = comments > 0
+      ? `いいね ${fmtNum(likes)}・コメント ${fmtNum(comments)} と、数値・テキスト双方のリアクションが得られており、フォロワーとの双方向コミュニケーションが促進されました。`
+      : `いいね ${fmtNum(likes)} の好意的なリアクションが確認されており、投稿コンテンツへの支持が示されています。`;
+    lines.push(intComment);
+  }
+
+  // ⑤ 総括
+  const avgReachComment = avgReach > 0
+    ? `1名あたりの平均リーチ ${fmtNum(avgReach)} を達成しており、各インフルエンサーがそれぞれの強みを発揮した施策となりました。`
+    : '';
+  if (avgReachComment) lines.push(avgReachComment);
+
+  const paragraphs = lines.map(l => `<p>${l}</p>`).join('');
+  return `
+  <div class="summary-comment-box">
+    <div class="summary-comment-header">
+      <i class="fas fa-comment-dots"></i> 施策総評
+    </div>
+    <div class="summary-comment-body">
+      ${paragraphs}
+    </div>
+  </div>`;
+}
+
+// ── サマリページ（複数ページ対応） ──
+const SUMMARY_ROWS_PER_PAGE = 8;  // 1ページ目（KPI＋総評コメント込み）の最大行数
+const SUMMARY_ROWS_CONT     = 14; // 続きページの最大行数
+
+function buildSummaryPages(assigns, infMap, startPageNum, totalPages, project) {
+  // 全体集計（全SNS合算）
+  let totalReach=0, totalLikes=0, totalComments=0, totalSaves=0;
+  assigns.forEach(a => {
+    const inf  = infMap[a.influencer_id] || {};
+    const rows = getAllSnsInsights(a, inf);
+    rows.forEach(sd => {
+      totalReach    += sd.reach;
+      totalLikes    += sd.likes;
+      totalComments += sd.comments;
+      totalSaves    += sd.saves;
+    });
+  });
+  const totalER = totalReach > 0
+    ? ((totalLikes+totalComments+totalSaves)/totalReach*100).toFixed(2) : '—';
+
+  // ── ビジネス指標計算 ──
+  const budget   = Number(project?.budget) || 0;
+  const priceRange = project?.price_range || '';
+  const bm = calcBusinessMetrics(totalSaves, priceRange, budget);
+
+  // 案件予算カード
+  const costCardHtml = `
+    <div class="kpi-card kpi--cost">
+      <div class="kpi-label"><i class="fas fa-yen-sign"></i> 案件予算</div>
+      <div class="kpi-value kpi-value--sm">${budget > 0 ? '¥'+fmtNum(budget) : '<span class="kpi-na">未設定</span>'}</div>
+      <div class="kpi-unit">project budget</div>
+      <div class="kpi-price-note">全${assigns.length}名 施策合計</div>
+    </div>`;
+
+  // 来店期待数カード
+  const visitCardHtml = `
+    <div class="kpi-card kpi--visit">
+      <div class="kpi-label"><i class="fas fa-store"></i> 来店期待数</div>
+      <div class="kpi-value kpi-value--sm">${bm.expectedVisitors > 0 ? fmtNum(bm.expectedVisitors) : '<span class="kpi-na">—</span>'}</div>
+      <div class="kpi-unit">人（${bm.expectedGroups > 0 ? fmtNum(bm.expectedGroups)+'組' : '—'}）</div>
+      <div class="kpi-price-note">保存数×10%×2.5人/組</div>
+    </div>`;
+
+  // 想定関与売上カード
+  const priceNote = bm.avgPrice !== null
+    ? `客単価 ¥${bm.avgPrice.toLocaleString()}（${esc(priceRange)}）`
+    : '客単価未設定';
+  const salesCardHtml = `
+    <div class="kpi-card kpi--sales">
+      <div class="kpi-label"><i class="fas fa-yen-sign"></i> 想定関与売上</div>
+      <div class="kpi-value kpi-value--sm">${bm.estimatedSales !== null ? '¥'+fmtNum(bm.estimatedSales) : '<span class="kpi-na">客単価未設定</span>'}</div>
+      <div class="kpi-unit">estimated revenue</div>
+      <div class="kpi-price-note">${priceNote}</div>
+    </div>`;
+
+  // ROASカード
+  const roasCardHtml = `
+    <div class="kpi-card kpi--roas">
+      <div class="kpi-label"><i class="fas fa-percentage"></i> ROAS</div>
+      <div class="kpi-value">${bm.roas !== null ? bm.roas+'%' : '<span class="kpi-na">—</span>'}</div>
+      <div class="kpi-unit">return on ad spend</div>
+      <div class="kpi-price-note">予算対比 ROAS算出ベース</div>
+    </div>`;
+
+  // ── サマリ評価コメント生成 ──
+  const summaryComment = buildSummaryComment(assigns.length, totalReach, totalLikes, totalSaves, totalComments, totalER);
+
+  // テーブルヘッダー（共通）
+  const tHead = `<table class="summary-table"><thead><tr>
+    <th>アカウント名</th><th>SNS</th><th>フォロワー</th>
+    <th>リーチ数</th><th>いいね数</th><th>保存数</th><th>ER</th>
+  </tr></thead><tbody>`;
+  const tFoot = `</tbody></table>`;
+
+  // 全行HTML（全SNS合算値を使用）
+  const allRows = assigns.map(a => {
+    const inf  = infMap[a.influencer_id] || {};
+    const rows = getAllSnsInsights(a, inf);
+    const reach    = rows.reduce((s, r) => s + r.reach,    0);
+    const likes    = rows.reduce((s, r) => s + r.likes,    0);
+    const comments = rows.reduce((s, r) => s + r.comments, 0);
+    const saves    = rows.reduce((s, r) => s + r.saves,    0);
+    const er = calcER(reach, likes, comments, saves);
+    return `<tr>
+      <td><div style="font-weight:700;font-size:10px;">${esc(inf.name||'—')}</div>
+          ${inf.sub_name ? `<div style="font-size:9px;color:var(--gray-400)">@${esc(inf.sub_name)}</div>` : ''}</td>
+      <td>${snsBadgeHtml(inf.sns_type)}</td>
+      <td class="num">${fmtFollowers(inf.followers)}</td>
+      <td class="num">${reach    > 0 ? fmtNum(reach)    : '—'}</td>
+      <td class="num">${likes    > 0 ? fmtNum(likes)    : '—'}</td>
+      <td class="num">${saves    > 0 ? fmtNum(saves)    : '—'}</td>
+      <td>${er !== null ? `<span class="er-badge">${er}%</span>` : '—'}</td>
+    </tr>`;
+  });
+
+  const firstChunk  = allRows.slice(0, SUMMARY_ROWS_PER_PAGE);
+  const restRows    = allRows.slice(SUMMARY_ROWS_PER_PAGE);
+  const hasNext     = restRows.length > 0;
+
+  // ─ P2 1ページ目 ─
+  let html = `
+  <div class="page page--summary">
+    <div class="page-header">
+      <div class="page-header-eyebrow">Summary</div>
+      <div class="page-header-title">施策サマリ</div>
+      <div class="page-header-sub">インフルエンサー別インサイト一覧（全${assigns.length}名）${hasNext ? '　→ 次ページへ続く' : ''}</div>
+    </div>
+    <div class="summary-body">
+      <div class="kpi-row" style="margin-top:5mm;">
+        <div class="kpi-card kpi--reach">
+          <div class="kpi-label"><i class="fas fa-eye"></i> 総リーチ数</div>
+          <div class="kpi-value kpi-value--sm">${fmtNum(totalReach)}</div>
+          <div class="kpi-unit">impressions</div>
+        </div>
+        <div class="kpi-card kpi--likes">
+          <div class="kpi-label"><i class="fas fa-heart"></i> 総いいね数</div>
+          <div class="kpi-value kpi-value--sm">${fmtNum(totalLikes)}</div>
+          <div class="kpi-unit">likes</div>
+        </div>
+        <div class="kpi-card kpi--saves">
+          <div class="kpi-label"><i class="fas fa-bookmark"></i> 総保存数</div>
+          <div class="kpi-value kpi-value--sm">${fmtNum(totalSaves)}</div>
+          <div class="kpi-unit">saves</div>
+        </div>
+        <div class="kpi-card kpi--er">
+          <div class="kpi-label"><i class="fas fa-chart-bar"></i> 平均ER</div>
+          <div class="kpi-value">${totalER}${totalER!=='—'?'%':''}</div>
+          <div class="kpi-unit">engagement rate</div>
+        </div>
+      </div>
+      <div class="kpi-row2">
+        ${costCardHtml}
+        ${visitCardHtml}
+        ${salesCardHtml}
+        ${roasCardHtml}
+      </div>
+      ${summaryComment}
+      <div class="summary-section-title" style="margin-bottom:4px;">
+        <i class="fas fa-list-ul"></i> インフルエンサー別実績一覧
+      </div>
+      ${tHead}${firstChunk.join('')}${tFoot}
+    </div>
+    ${pageFooterHtml(startPageNum, totalPages)}
+  </div>`;
+
+  // ─ 続きページ ─
+  let pageIdx = 1;
+  for (let i = 0; i < restRows.length; i += SUMMARY_ROWS_CONT) {
+    const chunk = restRows.slice(i, i + SUMMARY_ROWS_CONT);
+    const from  = firstChunk.length + i + 1;
+    const to    = Math.min(firstChunk.length + i + SUMMARY_ROWS_CONT, assigns.length);
+    html += `
+  <div class="page page--summary">
+    <div class="page-header">
+      <div class="page-header-eyebrow">Summary — 続き (${pageIdx + 1})</div>
+      <div class="page-header-title">施策サマリ</div>
+      <div class="page-header-sub">${from}〜${to}名目　/ 全${assigns.length}名</div>
+    </div>
+    <div class="summary-body" style="padding-top:6mm;">
+      ${tHead}${chunk.join('')}${tFoot}
+    </div>
+    ${pageFooterHtml(startPageNum + pageIdx, totalPages)}
+  </div>`;
+    pageIdx++;
+  }
+
+  return { html, pageCount: 1 + pageIdx - 1 };
+}
+
+function buildResultPage(assign, inf, pageNum, storeNum, totalPages) {
+  const snsRows   = getAllSnsInsights(assign, inf);
+  const storeName = inf.name || '—';
+
+  // 全SNS合計
+  const totalReach    = snsRows.reduce((s, r) => s + r.reach,    0);
+  const totalLikes    = snsRows.reduce((s, r) => s + r.likes,    0);
+  const totalComments = snsRows.reduce((s, r) => s + r.comments, 0);
+  const totalSaves    = snsRows.reduce((s, r) => s + r.saves,    0);
+  const totalEr       = calcER(totalReach, totalLikes, totalComments, totalSaves);
+  const totalEng      = totalLikes + totalComments + totalSaves;
+
+  // 分析コメントはメインSNS or 全SNS合算データで生成
+  const mainData = snsRows.find(s => s.isMain) || snsRows[0] || {};
+  const analysis = generateAnalysis(inf, mainData, storeName);
+
+  // SNSカラーマップ
+  const snsColorMap = {
+    Instagram: { bg:'#e1306c', color:'#fff' },
+    TikTok:    { bg:'#010101', color:'#fff' },
+    YouTube:   { bg:'#ff0000', color:'#fff' },
+    X:         { bg:'#14171a', color:'#fff' },
+    Twitter:   { bg:'#1da1f2', color:'#fff' },
+  };
+
+  const multiSns = snsRows.length > 1;
+
+  // ── コンパクトSNSインサイトテーブル ──
+  const followers = Number(inf.followers) || 0;
+
+  // 合計行（SNS数に関わらず常に表示）
+  const totalRow = `
+    <tr class="sns-compact-total">
+      <td class="sns-compact-name" style="font-weight:700;color:var(--suntory-navy);">
+        <i class="fas fa-chart-bar" style="margin-right:4px;color:var(--suntory-gold);"></i>合計
+      </td>
+      <td class="sns-compact-num">—</td>
+      <td class="sns-compact-num">${followers > 0 ? fmtNum(followers) : '—'}</td>
+      <td class="sns-compact-num">${totalReach    > 0 ? fmtNum(totalReach)    : '—'}</td>
+      <td class="sns-compact-num">${totalLikes    > 0 ? fmtNum(totalLikes)    : '—'}</td>
+      <td class="sns-compact-num">${totalSaves    > 0 ? fmtNum(totalSaves)    : '—'}</td>
+      <td class="sns-compact-er">${totalEr !== null ? `<span class="er-badge">${totalEr}%</span>` : '—'}</td>
+    </tr>`;
+
+  // SNSサブ行（常に全SNS表示。1件のみでも表示）
+  const subRows = snsRows.map(sd => {
+    const sc  = snsColorMap[sd.snsName] || { bg:'#6b7280', color:'#fff' };
+    const sdEr  = calcER(sd.reach, sd.likes, sd.comments, sd.saves);
+    const badge = `<span class="sns-compact-badge" style="background:${sc.bg};color:${sc.color};">${sd.isMain ? '★ ' : ''}${esc(sd.snsName)}</span>`;
+    const indent = multiSns ? 'padding-left:18px;' : 'padding-left:8px;';
+    const rowCls = !multiSns ? 'sns-compact-sub sns-compact-sub--main' : `sns-compact-sub${sd.isMain ? ' sns-compact-sub--main' : ''}`;
+    // フォロワー数はメインSNSのみ表示（サブSNSは —）
+    const sdFollowers = sd.isMain && followers > 0 ? fmtNum(followers) : '—';
+    return `
+    <tr class="${rowCls}">
+      <td class="sns-compact-name" style="${indent}">${badge}</td>
+      <td class="sns-compact-num" style="font-size:9px;color:#6b7280;">${esc(inf.name||'—')}</td>
+      <td class="sns-compact-num">${sdFollowers}</td>
+      <td class="sns-compact-num">${sd.reach    > 0 ? fmtNum(sd.reach)    : '—'}</td>
+      <td class="sns-compact-num">${sd.likes    > 0 ? fmtNum(sd.likes)    : '—'}</td>
+      <td class="sns-compact-num">${sd.saves    > 0 ? fmtNum(sd.saves)    : '—'}</td>
+      <td class="sns-compact-er">${sdEr !== null ? `<span class="er-badge er-badge--sm">${sdEr}%</span>` : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  const _hdrStyle = 'background:var(--suntory-navy);color:#fff;font-weight:700;font-size:10px;letter-spacing:.04em;white-space:nowrap;padding:5px 8px;';
+  const insightHeaderRow = `<tr style="background:var(--suntory-navy);">`
+    + `<td class="sns-compact-name" style="${_hdrStyle}text-align:left;">SNS</td>`
+    + `<td class="sns-compact-num" style="${_hdrStyle}text-align:right;">アカウント名</td>`
+    + `<td class="sns-compact-num" style="${_hdrStyle}text-align:right;">フォロワー数</td>`
+    + `<td class="sns-compact-num" style="${_hdrStyle}text-align:right;">リーチ数</td>`
+    + `<td class="sns-compact-num" style="${_hdrStyle}text-align:right;">いいね数</td>`
+    + `<td class="sns-compact-num" style="${_hdrStyle}text-align:right;">保存数</td>`
+    + `<td class="sns-compact-er" style="${_hdrStyle}text-align:center;">ER</td>`
+    + `</tr>`;
+  const insightTbody = insightHeaderRow + totalRow + subRows;
+
+  return `
+  <div class="page page--result" data-inf-id="${esc(assign.influencer_id||'')}" data-store-num="${storeNum}">
+    <!-- ページ削除ボタン（非印刷） -->
+    <button class="page-delete-btn no-print" title="このページを削除" onclick="deleteResultPage(this)">
+      <i class="fas fa-times"></i> このページを削除
+    </button>
+    <!-- ヘッダー -->
+    <div class="page-header">
+      <div class="page-header-store-num">${String(storeNum).padStart(2,'0')}</div>
+      <div class="page-header-store-info">
+        <div class="page-header-store-name">${esc(inf.name||'')}</div>
+        <div class="page-header-store-sub">結果報告</div>
+      </div>
+      ${snsRows.length > 0 ? `<div class="page-header-badge" style="display:flex;gap:4px;flex-wrap:wrap;">
+        ${snsRows.map(sd => snsBadgeHtml(sd.snsName)).join('')}
+      </div>` : ''}
+    </div>
+
+    <div class="result-body">
+      <!-- インフルエンサー基本情報 -->
+      <div>
+        <div class="section-label"><i class="fas fa-user"></i> インフルエンサー情報</div>
+        <div class="inf-profile-row">
+          <div class="inf-avatar">
+            ${inf.avatar_image ? `<img src="${esc(inf.avatar_image)}" alt="">` : '<i class="fas fa-camera"></i>'}
+          </div>
+          <div class="inf-profile-main">
+            <div class="inf-profile-name">
+              ${esc(inf.name||'—')}
+              ${snsRows.map(sd => snsBadgeHtml(sd.snsName)).join(' ')}
+            </div>
+            ${inf.sub_name ? `<div class="inf-profile-sub">@${esc(inf.sub_name)}</div>` : ''}
+            <div class="inf-meta-row">
+              ${assign.visit_datetime ? `<span class="inf-meta-tag"><i class="fas fa-calendar" style="color:var(--suntory-gold);"></i>来店: ${fmtDate(assign.visit_datetime)}</span>` : ''}
+              ${assign.post_date ? `<span class="inf-meta-tag"><i class="fas fa-paper-plane" style="color:var(--accent-green);"></i>投稿: ${fmtDate(assign.post_date)}</span>` : ''}
+            </div>
+          </div>
+          <div class="inf-followers-big">
+            <div class="val">${fmtFollowers(inf.followers)}</div>
+            <div class="lbl">フォロワー</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- インサイト（コンパクトテーブル形式） -->
+      <div>
+        <div class="section-label"><i class="fas fa-chart-bar"></i> インサイトデータ${multiSns ? `（${snsRows.length} SNS）` : ''}</div>
+        <table class="sns-compact-table"><tbody>${insightTbody}</tbody></table>
+      </div>
+
+      <!-- 投稿情報 -->
+      <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:8px 12px;">
+        <div style="font-size:9px;color:var(--gray-400);letter-spacing:.05em;margin-bottom:5px;">投稿情報</div>
+        ${assign.post_url ? `<div style="display:flex;align-items:center;gap:5px;font-size:10px;margin-bottom:4px;"><i class="fas fa-link" style="color:var(--suntory-blue);"></i> <a href="${esc(assign.post_url)}" style="color:#2563eb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:300px;">${esc(assign.post_url)}</a></div>` : '<div style="font-size:10px;color:var(--gray-400);">投稿URL未登録</div>'}
+        ${assign.notes ? `<div style="font-size:10px;color:var(--gray-600);margin-top:4px;line-height:1.5;">${esc(String(assign.notes)).slice(0,120)}</div>` : ''}
+      </div>
+
+      <!-- 分析 -->
+      <div>
+        <div class="section-label"><i class="fas fa-lightbulb"></i> 分析コメント</div>
+        <div class="analysis-box">
+          <div class="analysis-text">${analysis}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 画像エリア（ドラッグ＆ドロップ・複数枚・移動・リサイズ） -->
+    <div class="image-canvas" id="img-canvas-${pageNum}" data-page="${pageNum}">
+      <div class="image-canvas-hint" id="img-hint-${pageNum}">
+        <i class="fas fa-cloud-upload-alt"></i>
+        <p>ここに画像をドラッグ＆ドロップ</p>
+        <small>または下の「＋画像を追加」ボタンから選択</small>
+      </div>
+      <!-- 追加ボタン（非印刷） -->
+      <label class="img-add-btn no-print" for="img-upload-${pageNum}" title="画像を追加">
+        <i class="fas fa-plus"></i> 画像を追加
+        <input type="file" id="img-upload-${pageNum}" accept="image/*" multiple style="display:none;">
+      </label>
+      <!-- 全削除ボタン（非印刷） -->
+      <button class="img-clear-btn no-print" data-page="${pageNum}" title="全画像を削除"><i class="fas fa-trash"></i></button>
+    </div>
+
+    ${pageFooterHtml(pageNum, totalPages, storeName)}
+  </div>`;
+}
+
+function pageFooterHtml(current, total, sectionName = '') {
+  return `
+  <div class="page-footer-line"></div>
+  <div class="page-footer">
+    <span>${sectionName ? esc(sectionName) : 'CONFIDENTIAL'}</span>
+    <span style="font-size:9px;color:var(--suntory-gold);letter-spacing:.08em;">SUNTORY INFLUENCER REPORT</span>
+    <span>${current} / ${total}</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════
+//  画像キャンバス — ドラッグ&ドロップ / 移動 / リサイズ
+// ══════════════════════════════════════
+
+/** キャンバスに画像を追加 */
+function addImageToCanvas(canvas, file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    placeImage(canvas, e.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function placeImage(canvas, src, opts = {}) {
+  const canvasRect = canvas.getBoundingClientRect();
+  // キャンバスサイズ（CSS px）取得
+  const cw = canvas.offsetWidth;
+  const ch = canvas.offsetHeight;
+
+  // デフォルトサイズ：キャンバス幅の 40%
+  const defaultW = Math.round(cw * 0.42);
+  const defaultH = Math.round(defaultW * 0.72);
+
+  const item = document.createElement('div');
+  item.className = 'placed-img';
+  item.style.width  = (opts.w || defaultW) + 'px';
+  item.style.height = (opts.h || defaultH) + 'px';
+  // 既存アイテム数を見てずらして配置
+  const existCount = canvas.querySelectorAll('.placed-img').length;
+  const offsetX = 12 + existCount * 18;
+  const offsetY = 12 + existCount * 14;
+  item.style.left = (opts.x != null ? opts.x : offsetX) + 'px';
+  item.style.top  = (opts.y != null ? opts.y : offsetY) + 'px';
+  item.style.zIndex = 10 + existCount;
+
+  const img = document.createElement('img');
+  img.src = src;
+  item.appendChild(img);
+
+  // リサイズハンドル
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'resize-handle';
+  item.appendChild(resizeHandle);
+
+  // 削除ハンドル
+  const deleteHandle = document.createElement('div');
+  deleteHandle.className = 'delete-handle';
+  deleteHandle.innerHTML = '✕';
+  deleteHandle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    item.remove();
+    updateCanvasState(canvas);
+  });
+  item.appendChild(deleteHandle);
+
+  // ── 移動（ドラッグ） ──
+  item.addEventListener('mousedown', (e) => {
+    if (e.target === resizeHandle || e.target === deleteHandle) return;
+    e.preventDefault();
+    // 選択状態
+    canvas.querySelectorAll('.placed-img').forEach(el => el.classList.remove('selected'));
+    item.classList.add('selected');
+    // z-index を最前面に
+    const maxZ = Math.max(...[...canvas.querySelectorAll('.placed-img')].map(el => Number(el.style.zIndex)||10));
+    item.style.zIndex = maxZ + 1;
+
+    const startX = e.clientX - item.offsetLeft;
+    const startY = e.clientY - item.offsetTop;
+
+    const onMove = (me) => {
+      const newX = me.clientX - startX;
+      const newY = me.clientY - startY;
+      // キャンバス内クランプ
+      const maxX = canvas.offsetWidth  - item.offsetWidth;
+      const maxY = canvas.offsetHeight - item.offsetHeight;
+      item.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+      item.style.top  = Math.max(0, Math.min(newY, maxY)) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // ── リサイズ ──
+  resizeHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX  = e.clientX;
+    const startY  = e.clientY;
+    const startW  = item.offsetWidth;
+    const startH  = item.offsetHeight;
+    const aspect  = startW / startH;
+
+    const onMove = (me) => {
+      const dx = me.clientX - startX;
+      const dy = me.clientY - startY;
+      const delta = (Math.abs(dx) > Math.abs(dy)) ? dx : dy;
+      const newW = Math.max(80, startW + delta);
+      const newH = Math.round(newW / aspect);
+      // キャンバス内クランプ
+      const maxW = canvas.offsetWidth  - item.offsetLeft;
+      const maxH = canvas.offsetHeight - item.offsetTop;
+      item.style.width  = Math.min(newW, maxW) + 'px';
+      item.style.height = Math.min(newH, maxH) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  canvas.appendChild(item);
+  updateCanvasState(canvas);
+}
+
+/** キャンバスの has-images クラス・ヒント制御 */
+function updateCanvasState(canvas) {
+  const hasImages = canvas.querySelectorAll('.placed-img').length > 0;
+  canvas.classList.toggle('has-images', hasImages);
+  const hint = canvas.querySelector('.image-canvas-hint');
+  if (hint) hint.style.pointerEvents = hasImages ? 'none' : 'auto';
+}
+
+/** キャンバスのドラッグ&ドロップ・ファイル選択バインド */
+function bindCanvasEvents(canvas) {
+  // ── ドラッグ&ドロップ ──
+  canvas.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    canvas.classList.add('drag-over');
+  });
+  canvas.addEventListener('dragleave', () => {
+    canvas.classList.remove('drag-over');
+  });
+  canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    canvas.classList.remove('drag-over');
+    [...e.dataTransfer.files]
+      .filter(f => f.type.startsWith('image/'))
+      .forEach(f => addImageToCanvas(canvas, f));
+  });
+
+  // ── ファイル選択（input[file]） ──
+  const pageNum = canvas.dataset.page;
+  const fileInput = document.getElementById(`img-upload-${pageNum}`);
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      [...fileInput.files].forEach(f => addImageToCanvas(canvas, f));
+      fileInput.value = ''; // リセット（同じファイルの再選択を可能にする）
+    });
+  }
+
+  // ── 全削除ボタン ──
+  const clearBtn = canvas.querySelector('.img-clear-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      canvas.querySelectorAll('.placed-img').forEach(el => el.remove());
+      updateCanvasState(canvas);
+    });
+  }
+
+  // ── キャンバス外クリックで選択解除 ──
+  canvas.addEventListener('click', (e) => {
+    if (e.target === canvas || e.target.classList.contains('image-canvas-hint')) {
+      canvas.querySelectorAll('.placed-img').forEach(el => el.classList.remove('selected'));
+    }
+  });
+}
+
+/** 結果ページ削除 & サマリ再計算 */
+function deleteResultPage(btn) {
+  const page = btn.closest('.page--result');
+  if (!page) return;
+  if (!confirm('このページを削除しますか？\nサマリも自動更新されます。')) return;
+
+  page.remove();
+
+  // 残りの結果ページを取得
+  const allResultPages = [...document.querySelectorAll('.page--result')];
+
+  // 店舗番号（左上の2桁数字）を振り直し
+  allResultPages.forEach((p, idx) => {
+    const numEl = p.querySelector('.page-header-store-num');
+    if (numEl) numEl.textContent = String(idx + 1).padStart(2, '0');
+    p.dataset.storeNum = idx + 1;
+  });
+
+  // サマリページを再生成
+  rebuildSummaryFromDOM();
+
+  // 全ページのフッターページ番号を振り直し
+  rebuildPageNumbers();
+}
+
+/** DOM上の結果ページからサマリデータを再集計してサマリページを再構築 */
+function rebuildSummaryFromDOM() {
+  const resultPages = [...document.querySelectorAll('.page--result')];
+  const summaryPages = [...document.querySelectorAll('.page--summary')];
+  if (summaryPages.length === 0 || resultPages.length === 0) return;
+
+  // 各結果ページのKPI値をDOMから読み取る
+  const rows = resultPages.map((p, idx) => {
+    const infName   = p.querySelector('.inf-profile-name')?.childNodes[0]?.textContent?.trim() || p.querySelector('.page-header-store-name')?.textContent || '—';
+    const subName   = p.querySelector('.inf-profile-sub')?.textContent?.replace(/^@/, '') || '';
+    const folEl     = p.querySelector('.inf-followers-big .val');
+    const followers = folEl ? folEl.textContent : '—';
+    const icCards   = p.querySelectorAll('.insight-card');
+    const vals = [...icCards].map(c => c.querySelector('.insight-val')?.textContent || '—');
+    // vals: [reach, likes, comments, saves]
+    const reach    = vals[0] !== '—' ? vals[0] : '—';
+    const likes    = vals[1] !== '—' ? vals[1] : '—';
+    const saves    = vals[3] !== '—' ? vals[3] : '—';
+    const erEl     = p.querySelector('[style*="059669"][style*="28px"]');
+    const er       = erEl ? erEl.textContent : '—';
+    const snsEl    = p.querySelector('.page-header-badge');
+    const snsType  = snsEl ? snsEl.textContent.trim() : '';
+
+    return `<tr>
+      <td><div style="font-weight:700;font-size:10px;">${esc(infName)}</div>
+          ${subName ? `<div style="font-size:9px;color:var(--gray-400)">@${esc(subName)}</div>` : ''}</td>
+      <td>${snsBadgeHtml(snsType.replace(/^\s*\S+\s+/, ''))}</td>
+      <td class="num">${followers}</td>
+      <td class="num">${reach}</td>
+      <td class="num">${likes}</td>
+      <td class="num">${saves}</td>
+      <td>${er !== '—' ? `<span class="er-badge">${er}</span>` : '—'}</td>
+    </tr>`;
+  });
+
+  const totalCount = rows.length;
+  const tHeadRebuild = `<table class="summary-table"><thead><tr>
+    <th>アカウント名</th><th>SNS</th><th>フォロワー</th>
+    <th>リーチ数</th><th>いいね数</th><th>保存数</th><th>ER</th>
+  </tr></thead><tbody>`;
+  const tFootRebuild = '</tbody></table>';
+
+  // 1ページ目のサマリを更新（テーブル部分を置換）
+  const firstSummary = summaryPages[0];
+  const subEl = firstSummary.querySelector('.page-header-sub');
+  if (subEl) subEl.textContent = `インフルエンサー別インサイト一覧（全${totalCount}名）`;
+
+  const firstRows = rows.slice(0, SUMMARY_ROWS_PER_PAGE);
+  const summaryBodyFirst = firstSummary.querySelector('.summary-body');
+  if (summaryBodyFirst) {
+    const tableEl = summaryBodyFirst.querySelector('table');
+    if (tableEl) {
+      tableEl.outerHTML = tHeadRebuild + firstRows.join('') + tFootRebuild;
+    }
+  }
+
+  // 続きページ（2枚目以降のサマリ）を再生成
+  const restRows = rows.slice(SUMMARY_ROWS_PER_PAGE);
+  // 既存の続きサマリを削除
+  summaryPages.slice(1).forEach(p => p.remove());
+
+  // 続きページを再挿入（1枚目サマリの直後）
+  const currentFirstSummary = document.querySelector('.page--summary');
+  let insertAfter = currentFirstSummary;
+  for (let i = 0; i < restRows.length; i += SUMMARY_ROWS_CONT) {
+    const chunk = restRows.slice(i, i + SUMMARY_ROWS_CONT);
+    const from  = SUMMARY_ROWS_PER_PAGE + i + 1;
+    const to    = Math.min(SUMMARY_ROWS_PER_PAGE + i + SUMMARY_ROWS_CONT, totalCount);
+    const contDiv = document.createElement('div');
+    contDiv.className = 'page page--summary';
+    contDiv.innerHTML = `
+    <div class="page-header">
+      <div class="page-header-eyebrow">Summary — 続き</div>
+      <div class="page-header-title">施策サマリ</div>
+      <div class="page-header-sub">${from}〜${to}名目　/ 全${totalCount}名</div>
+    </div>
+    <div class="summary-body" style="padding-top:6mm;">
+      ${tHeadRebuild}${chunk.join('')}${tFootRebuild}
+    </div>`;
+    insertAfter.insertAdjacentElement('afterend', contDiv);
+    insertAfter = contDiv;
+  }
+}
+
+/** 全ページの「X / Y」フッター番号を振り直し */
+function rebuildPageNumbers() {
+  const allPages = [...document.querySelectorAll('.page')];
+  const total = allPages.length;
+  allPages.forEach((p, idx) => {
+    const footerRight = p.querySelector('.page-footer span:last-child');
+    if (footerRight) footerRight.textContent = `${idx + 1} / ${total}`;
+  });
+}
+
+/** ページ生成後に全キャンバスにイベントをバインド */
+function bindAllCanvases() {
+  document.querySelectorAll('.image-canvas').forEach(canvas => {
+    bindCanvasEvents(canvas);
+  });
+}
+
+// ══════════════════════════════════════
+//  メイン処理
+// ══════════════════════════════════════
+let allProjects = [];
+
+async function init() {
+  const overlay = document.getElementById('loadingOverlay');
+  try {
+    overlay.style.display = 'flex';
+    const res = await API.getAll('projects');
+    allProjects = (res.data || []).filter(p => p.status !== 'キャンセル');
+    allProjects.sort((a, b) => (b.start_date || '').localeCompare(a.start_date || ''));
+    const sel = document.getElementById('projectSelect');
+    allProjects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.project_name || '(無題)'}${p.status ? ' ['+p.status+']' : ''}`;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error(e);
+    alert('プロジェクト一覧の取得に失敗しました');
+  } finally {
+    overlay.style.display = 'none';
+  }
+}
+
+async function generateReport() {
+  const projectId = document.getElementById('projectSelect').value;
+  if (!projectId) { alert('案件を選択してください'); return; }
+
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.style.display = 'flex';
+
+  try {
+    // allProjects から検索（型安全な文字列比較）、なければ API から直接取得
+    let project = allProjects.find(p => String(p.id) === String(projectId));
+    if (!project) {
+      try {
+        const pRes = await API.getOne('projects', projectId);
+        project = pRes?.data ?? pRes ?? {};
+      } catch(e) {
+        project = {};
+      }
+    }
+
+    // データ取得（project_groups も取得して include_in_list フィルタに使用）
+    const [assignRes, infRes, clientRes, groupsRes] = await Promise.all([
+      API.getAll('project_influencers'),
+      API.getAll('influencers', {}, 20),  // 413対策: influencersはpageSize=20
+      API.getAll('clients'),
+      API.getAll('project_groups'),
+    ]);
+
+    // リスト非表示グループ名セット
+    // include_in_list が明示的に false/'false' の場合のみ除外
+    // （null/undefined/0 はデフォルト「表示」扱い）
+    const _isExcludedRpt = v => v === false || v === 'false';
+    const _excludedGrpsRpt = new Set(
+      (groupsRes.data || [])
+        .filter(g => String(g.project_id) === String(projectId) && _isExcludedRpt(g.include_in_list))
+        .map(g => g.group_name)
+    );
+
+    console.log('[report2] projectId:', projectId);
+    console.log('[report2] total project_influencers:', (assignRes.data || []).length);
+    console.log('[report2] matched project_influencers:', (assignRes.data || []).filter(a => String(a.project_id) === String(projectId)).length);
+    console.log('[report2] excludedGroups:', [..._excludedGrpsRpt]);
+
+    const EXCLUDED_GROUP_RPT = 'お断り/待ち';
+    const assigns = (assignRes.data || []).filter(a =>
+      String(a.project_id) === String(projectId) &&
+      a.request_status !== 'キャンセル' &&
+      a.group_name !== EXCLUDED_GROUP_RPT &&
+      !_excludedGrpsRpt.has(a.group_name || '')
+    );
+
+    console.log('[report2] assigns after filter:', assigns.length);
+
+    // infMap
+    const infMap = {};
+    (infRes.data || []).forEach(i => { infMap[i.id] = i; });
+
+    // クライアント名（project_clientsはJSONなのでパースして名前解決）
+    const clientMap = {};
+    (clientRes.data || []).forEach(c => { clientMap[c.id] = c; });
+
+    let clientName = '—';
+    if (project.project_clients) {
+      try {
+        const pcArr = JSON.parse(project.project_clients);
+        if (Array.isArray(pcArr) && pcArr.length > 0) {
+          // 全社名を「・」区切りで結合（複数クライアント対応）
+          const names = pcArr
+            .map(pc => clientMap[pc.client_id]?.company_name)
+            .filter(Boolean);
+          clientName = names.length > 0 ? names.join('・') : '—';
+        }
+      } catch(e) {
+        // パース失敗時はフォールバック
+        clientName = clientMap[project.client_id]?.company_name || '—';
+      }
+    } else if (project.client_id) {
+      clientName = clientMap[project.client_id]?.company_name || '—';
+    }
+
+    if (assigns.length === 0) {
+      document.getElementById('pagesWrap').innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-inbox" style="color:var(--gray-300);"></i>
+          <p>この案件にアサインされたインフルエンサーがありません</p>
+        </div>`;
+      return;
+    }
+
+    // ソート：グループ名（店舗）→ sort_order → 名前
+    assigns.sort((a,b) => {
+      const ga = (a.group_name||'').localeCompare(b.group_name||'');
+      if (ga !== 0) return ga;
+      return (a.sort_order||0) - (b.sort_order||0);
+    });
+
+    const issuedDate = new Date().toLocaleDateString('ja-JP', { year:'numeric', month:'long', day:'numeric' });
+
+    // サマリページ数を先に計算（複数ページ対応）
+    const summaryPageCount = 1 + (assigns.length > SUMMARY_ROWS_PER_PAGE
+      ? Math.ceil((assigns.length - SUMMARY_ROWS_PER_PAGE) / SUMMARY_ROWS_CONT) : 0);
+    const totalPages = 1 + summaryPageCount + assigns.length; // 表紙 + サマリ(複数) + 結果N件
+
+    let html = '';
+
+    // P1: 表紙
+    html += buildCoverPage(project, clientName, assigns.length, issuedDate);
+
+    // P2〜: サマリ（複数ページ対応）
+    const summaryResult = buildSummaryPages(assigns, infMap, 2, totalPages, project);
+    html += summaryResult.html;
+    const resultStartPage = 2 + summaryResult.pageCount;
+
+    // P(resultStartPage)〜: 結果ページ（1人＝1ページ）
+    assigns.forEach((a, i) => {
+      const inf = infMap[a.influencer_id] || { name: '不明', followers: 0 };
+      html += buildResultPage(a, inf, resultStartPage + i, i + 1, totalPages);
+    });
+
+    document.getElementById('pagesWrap').innerHTML = html;
+    // 画像キャンバスのイベントを全ページにバインド
+    bindAllCanvases();
+  } catch(e) {
+    console.error(e);
+    alert('データ取得中にエラーが発生しました: ' + e.message);
+  } finally {
+    overlay.style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════
+//  イベント
+// ══════════════════════════════════════
+document.getElementById('btnGenerate').addEventListener('click', generateReport);
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+document.getElementById('projectSelect').addEventListener('change', () => {
+  const id = document.getElementById('projectSelect').value;
+  if (id) generateReport();
+});
+
+// 初期化
+init().then(() => {
+  // URLパラメータ ?pid= があれば自動で案件を選択して報告書を生成
+  const urlParams = new URLSearchParams(location.search);
+  const pid = urlParams.get('pid');
+  if (pid) {
+    const sel = document.getElementById('projectSelect');
+    sel.value = pid;
+    if (sel.value === pid) {
+      // セレクトに存在した → そのまま生成
+      generateReport();
+    } else {
+      // セレクトに存在しない（キャンセル等でフィルタ済み）→ 直接 projectId で生成
+      // セレクト表示用に option を追加してから生成
+      const opt = document.createElement('option');
+      opt.value = pid;
+      opt.textContent = '（直接指定）';
+      sel.appendChild(opt);
+      sel.value = pid;
+      generateReport();
+    }
+  }
+});
+</script>
+</body>
+</html>

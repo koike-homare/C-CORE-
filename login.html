@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C-CORE | Advertising Core System</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='32' fill='%231a1a2e'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='32' font-family='Arial Black,sans-serif' font-weight='900' fill='%23a78bfa'>C</text></svg>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #6c63ff;
+      --primary-dark:  #4f46e5;
+      --primary-light: #ede9fe;
+      --gray-50:  #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --red:      #ef4444;
+      --radius:   12px;
+      --shadow:   0 20px 60px rgba(108,99,255,.18), 0 4px 20px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ─── カード ─────────────────────────────── */
+    .login-card {
+      position: relative;
+      z-index: 1;
+      width: min(92vw, 420px);
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 4px 32px rgba(0,0,0,.10), 0 1px 6px rgba(0,0,0,.06);
+      border: 1px solid var(--gray-200);
+      padding: 0 0 40px;
+      overflow: hidden;
+      animation: slideUp .45s cubic-bezier(.22,.68,0,1.2) both;
+    }
+    @keyframes slideUp {
+      from { opacity:0; transform: translateY(28px) scale(.97); }
+      to   { opacity:1; transform: translateY(0)     scale(1);  }
+    }
+
+    /* ─── ロゴバナー ─────────────────────────── */
+    .login-logo {
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 32px;
+      margin-bottom: 36px;
+    }
+    .login-logo img {
+      max-width: 200px;
+      max-height: 56px;
+      object-fit: contain;
+    }
+    .login-logo-fallback {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: .5px;
+    }
+    .login-logo-fallback i {
+      font-size: 28px;
+      color: #a78bfa;
+    }
+
+    /* ─── タイトル ───────────────────────────── */
+    .login-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--gray-900);
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: -.3px;
+      padding: 0 40px;
+    }
+    .login-sub {
+      font-size: 12px;
+      color: var(--gray-500);
+      text-align: center;
+      margin-bottom: 32px;
+      padding: 0 40px;
+    }
+
+    /* ─── フォーム ───────────────────────────── */
+    .form-body {
+      padding: 0 40px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 7px;
+      letter-spacing: .3px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      font-size: 14px;
+      color: var(--gray-400);
+      pointer-events: none;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 44px 12px 38px;
+      font-size: 14px;
+      font-family: inherit;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius);
+      background: var(--gray-50);
+      color: var(--gray-900);
+      outline: none;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+    }
+    .form-input::placeholder { color: var(--gray-300); }
+    .form-input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(108,99,255,.12);
+    }
+    .form-input.error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(239,68,68,.1);
+    }
+
+    /* 目玉ボタン */
+    .pw-toggle {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--gray-400);
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: color .15s;
+    }
+    .pw-toggle:hover { color: var(--primary); }
+
+    /* ─── エラーメッセージ ───────────────────── */
+    .login-error {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #dc2626;
+      margin-bottom: 18px;
+      font-weight: 500;
+      animation: shake .3s ease;
+    }
+    .login-error.show { display: flex; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60%  { transform: translateX(-5px); }
+      40%,80%  { transform: translateX(5px); }
+    }
+
+    /* ─── ログインボタン ─────────────────────── */
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity .18s, transform .15s, box-shadow .18s;
+      box-shadow: 0 4px 14px rgba(108,99,255,.4);
+      letter-spacing: .3px;
+    }
+    .btn-login:hover  { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,99,255,.45); }
+    .btn-login:active { transform: translateY(0); opacity: 1; }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+    /* ローディングスピナー */
+    .btn-login .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    .btn-login.loading .spinner { display: block; }
+    .btn-login.loading .btn-text { opacity: .7; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── フッター ───────────────────────────── */
+    .login-footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--gray-400);
+      padding: 0 40px;
+    }
+    .login-footer strong { color: var(--gray-600); }
+
+    /* ─── レスポンシブ ───────────────────────── */
+    @media (max-width: 480px) {
+      .login-logo { padding: 22px 24px; }
+      .login-title, .login-sub, .login-footer { padding: 0 24px; }
+      .form-body { padding: 0 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+
+    <!-- ロゴバナー -->
+    <div class="login-logo" id="login-logo-area">
+      <img src="images/ccore-logo.png" alt="C-CORE Collection Core System"
+           onerror="this.parentElement.innerHTML='<span class=\'login-logo-fallback\'><i class=\'fas fa-cube\'></i> C-CORE</span>'">
+    </div>
+
+    <h1 class="login-title">ログイン</h1>
+    <p class="login-sub">パスワードを入力してください</p>
+
+    <div class="form-body">
+
+      <!-- エラーメッセージ -->
+      <div class="login-error" id="login-error">
+        <i class="fas fa-circle-exclamation"></i>
+        <span id="login-error-msg">パスワードが正しくありません</span>
+      </div>
+
+      <!-- フォーム -->
+      <form id="login-form" onsubmit="return false;" autocomplete="off">
+        <input type="text" name="username" style="display:none;" aria-hidden="true" autocomplete="username">
+
+        <div class="form-group">
+          <label for="login-pw">パスワード</label>
+          <div class="input-wrap">
+            <i class="fas fa-lock input-icon"></i>
+            <input
+              type="password"
+              id="login-pw"
+              class="form-input"
+              placeholder="パスワードを入力"
+              autocomplete="current-password"
+              autofocus
+            >
+            <button type="button" class="pw-toggle" id="pw-toggle-btn" title="表示/非表示">
+              <i class="fas fa-eye" id="pw-toggle-icon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="btn-login">
+          <div class="spinner"></div>
+          <span class="btn-text"><i class="fas fa-sign-in-alt"></i> ログイン</span>
+        </button>
+
+      </form>
+
+    </div>
+
+    <div class="login-footer">
+      <strong>C-CORE Collection Core System</strong>
+    </div>
+
+  </div>
+
+<script>
+(async function () {
+  'use strict';
+
+  const SESSION_KEY = 'cccore_session';
+
+  /* ── 既にログイン済みならダッシュボードへ ── */
+  if (sessionStorage.getItem(SESSION_KEY) === 'ok') {
+    location.replace('index.html');
+    return;
+  }
+
+
+
+  /* ── パスワード表示切替 ── */
+  const pwInput = document.getElementById('login-pw');
+  const pwToggle = document.getElementById('pw-toggle-btn');
+  const pwIcon   = document.getElementById('pw-toggle-icon');
+  pwToggle.addEventListener('click', () => {
+    if (pwInput.type === 'password') {
+      pwInput.type = 'text';
+      pwIcon.className = 'fas fa-eye-slash';
+    } else {
+      pwInput.type = 'password';
+      pwIcon.className = 'fas fa-eye';
+    }
+  });
+
+  /* ── エラー表示 ── */
+  function showError(msg) {
+    const el = document.getElementById('login-error');
+    document.getElementById('login-error-msg').textContent = msg;
+    el.classList.add('show');
+  }
+  function hideError() {
+    document.getElementById('login-error').classList.remove('show');
+  }
+
+  /* ── ログイン処理 ── */
+  const btn  = document.getElementById('btn-login');
+  const form = document.getElementById('login-form');
+
+  async function doLogin() {
+    hideError();
+    const pw = pwInput.value;
+
+    if (!pw) {
+      showError('パスワードを入力してください');
+      pwInput.classList.add('error');
+      pwInput.focus();
+      return;
+    }
+    pwInput.classList.remove('error');
+
+    // ローディング
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    try {
+      /* 企業情報からマスターPW・ログインPWを取得（全件からパスワード設定済みを優先） */
+      const res  = await fetch('tables/company_info?limit=100');
+      if (!res.ok) {
+        showError('サーバーとの通信に失敗しました（' + res.status + '）。再度お試しください。');
+        return;
+      }
+      const json = await res.json();
+      let allRecords = Array.isArray(json.data) ? json.data : [];
+
+      // DBが空の場合は自動的にデフォルトレコードを作成
+      if (allRecords.length === 0) {
+        try {
+          const setupRes = await fetch('tables/company_info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ company_name: 'C-CORE', login_password: 'Collection0704', master_password: 'Collection0704' })
+          });
+          if (setupRes.ok) {
+            const setupJson = await setupRes.json();
+            allRecords = [setupJson];
+          }
+        } catch(setupErr) { console.warn('auto setup failed', setupErr); }
+      }
+
+      // パスワードが設定されているレコードを優先して使用
+      const record = allRecords.find(r => (r.master_password || '').trim() || (r.login_password || '').trim())
+                  || allRecords[0];
+
+      if (!record) {
+        showError('企業情報が未設定です。先に企業情報でパスワードを登録してください。');
+        return;
+      }
+
+      const masterPw = (record.master_password || '').trim();
+      const loginPw  = (record.login_password  || '').trim();
+
+      /* どちらか一方でも未設定の場合は設定済みの方のみで判定 */
+      const validPasswords = [masterPw, loginPw].filter(p => p.length > 0);
+
+      if (validPasswords.length === 0) {
+        showError('パスワードが設定されていません。企業情報でパスワードを登録してください。');
+        return;
+      }
+
+      if (validPasswords.includes(pw)) {
+        /* ログイン成功 */
+        sessionStorage.setItem(SESSION_KEY, 'ok');
+        btn.innerHTML = '<i class="fas fa-check"></i> ログイン成功';
+        btn.style.background = 'linear-gradient(135deg,#22c55e,#16a34a)';
+        setTimeout(() => {
+          location.replace('index.html');
+        }, 400);
+      } else {
+        /* ログイン失敗 */
+        showError('パスワードが正しくありません');
+        pwInput.classList.add('error');
+        pwInput.value = '';
+        pwInput.focus();
+      }
+    } catch(e) {
+      showError('サーバーとの通信に失敗しました。再度お試しください。');
+      console.error(e);
+    } finally {
+      if (!sessionStorage.getItem(SESSION_KEY)) {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+      }
+    }
+  }
+
+  btn.addEventListener('click', doLogin);
+  form.addEventListener('submit', doLogin);
+
+  /* Enterキーでも送信 */
+  pwInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  /* 入力時エラー解除 */
+  pwInput.addEventListener('input', () => {
+    pwInput.classList.remove('error');
+    hideError();
+  });
+
+})();
+</script>
+
+</body>
+</html>

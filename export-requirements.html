@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>C-CORE 開発要件書 エクスポート</title>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; background: #f3f4f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.10); padding: 48px 40px; text-align: center; max-width: 480px; width: 90%; }
+    h1 { font-size: 20px; color: #1f2937; margin-bottom: 8px; }
+    p { font-size: 14px; color: #6b7280; margin-bottom: 32px; line-height: 1.7; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; border-radius: 10px; padding: 14px 32px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+    .btn:hover { opacity: .88; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .note { margin-top: 20px; font-size: 12px; color: #9ca3af; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>📊 C-CORE 開発要件書</h1>
+  <p>ボタンをクリックすると<br><strong>Excel（.xlsx）</strong>形式でダウンロードします。</p>
+  <button class="btn" id="btn-download" onclick="generateExcel()">
+    ⬇ Excel をダウンロード
+  </button>
+  <p class="note">ExcelJS を使用してブラウザ上で生成します</p>
+</div>
+
+<script>
+async function generateExcel() {
+  const btn = document.getElementById('btn-download');
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Collection Co., Ltd.';
+  wb.created = new Date();
+
+  // ── スタイル定義 ──
+  const H1 = { font: { bold: true, size: 16, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } }, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true }, border: { bottom: { style: 'medium', color: { argb: 'FF4F46E5' } } } };
+  const H2 = { font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6366F1' } }, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true } };
+  const H3 = { font: { bold: true, size: 11, color: { argb: 'FF1E1B4B' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E7FF' } }, alignment: { vertical: 'middle', horizontal: 'left', wrapText: true } };
+  const TH = { font: { bold: true, size: 10, color: { argb: 'FFFFFFFF' } }, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF374151' } }, alignment: { vertical: 'middle', horizontal: 'center', wrapText: true }, border: { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } } };
+  const TD = { font: { size: 10 }, alignment: { vertical: 'top', horizontal: 'left', wrapText: true }, border: { top: { style: 'thin', color: { argb: 'FFE5E7EB' } }, bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } }, left: { style: 'thin', color: { argb: 'FFE5E7EB' } }, right: { style: 'thin', color: { argb: 'FFE5E7EB' } } } };
+  const TD_ALT = { ...TD, fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } } };
+  const BODY = { font: { size: 10 }, alignment: { vertical: 'top', horizontal: 'left', wrapText: true } };
+  const BOLD = { font: { size: 10, bold: true }, alignment: { vertical: 'top', horizontal: 'left', wrapText: true } };
+
+  function addRow(ws, data, style, height = 18) {
+    const row = ws.addRow(data);
+    row.height = height;
+    if (style) row.eachCell(c => Object.assign(c, style));
+    return row;
+  }
+  function addTableHeader(ws, cols) {
+    const row = ws.addRow(cols);
+    row.height = 22;
+    row.eachCell(c => Object.assign(c, TH));
+    return row;
+  }
+  function addTableRow(ws, data, alt = false) {
+    const row = ws.addRow(data);
+    row.height = 30;
+    const style = alt ? TD_ALT : TD;
+    row.eachCell(c => Object.assign(c, style));
+    return row;
+  }
+  function blank(ws) { ws.addRow([]); }
+  function sectionH1(ws, title) {
+    ws.addRow([]);
+    const row = ws.addRow([title]);
+    row.height = 28;
+    row.getCell(1).style = H1;
+    ws.mergeCells(row.number, 1, row.number, ws.columnCount || 4);
+    ws.addRow([]);
+  }
+  function sectionH2(ws, title) {
+    const row = ws.addRow([title]);
+    row.height = 22;
+    row.getCell(1).style = H2;
+    ws.mergeCells(row.number, 1, row.number, ws.columnCount || 4);
+    ws.addRow([]);
+  }
+  function sectionH3(ws, title) {
+    const row = ws.addRow([title]);
+    row.height = 20;
+    row.getCell(1).style = H3;
+    ws.mergeCells(row.number, 1, row.number, ws.columnCount || 4);
+  }
+  function bodyRow(ws, text, indent = '') {
+    const row = ws.addRow([indent + text]);
+    row.height = 16;
+    row.getCell(1).style = BODY;
+    ws.mergeCells(row.number, 1, row.number, ws.columnCount || 4);
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート1: 表紙・概要
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws0 = wb.addWorksheet('表紙・概要');
+  ws0.columns = [{ width: 30 }, { width: 60 }];
+
+  // タイトル
+  ws0.addRow([]);
+  { const r = ws0.addRow(['C-CORE 開発要件書']); r.height = 40; r.getCell(1).style = { font: { bold: true, size: 22, color: { argb: 'FF4F46E5' } }, alignment: { horizontal: 'center', vertical: 'middle' } }; ws0.mergeCells(r.number, 1, r.number, 2); }
+  { const r = ws0.addRow(['Collection Core System — システム開発依頼仕様書']); r.height = 22; r.getCell(1).style = { font: { size: 12, color: { argb: 'FF6B7280' } }, alignment: { horizontal: 'center' } }; ws0.mergeCells(r.number, 1, r.number, 2); }
+  ws0.addRow([]);
+
+  addTableRow(ws0, ['作成日', '2026年5月26日']);
+  addTableRow(ws0, ['依頼元', 'Collection Co., Ltd.'], true);
+  addTableRow(ws0, ['システム名', 'C-CORE（Collection Core System）']);
+  addTableRow(ws0, ['目的', 'インフルエンサーマーケティング事業向けの業務管理システム。\nクライアント・インフルエンサー・案件・請求・スケジュール管理を一元化し、業務効率化・情報共有を実現する。'], true);
+
+  ws0.addRow([]);
+  sectionH2(ws0, '■ 利用者種別');
+  addTableHeader(ws0, ['ユーザー種別', '説明']);
+  addTableRow(ws0, ['社内スタッフ', 'メイン管理画面（index.html）を使用']);
+  addTableRow(ws0, ['クライアント（飲食店等）', '来店スケジュール確認・受入可否回答ページ（schedule-share.html）を使用'], true);
+  addTableRow(ws0, ['インフルエンサー志望者', '申請フォーム（apply.html）から自己申請']);
+
+  ws0.addRow([]);
+  sectionH2(ws0, '■ 現行技術スタック');
+  addTableHeader(ws0, ['項目', '内容']);
+  addTableRow(ws0, ['フロントエンド', 'HTML5 + CSS3 + Vanilla JavaScript（約11,500行）']);
+  addTableRow(ws0, ['バックエンド', 'RESTful Table API（外部ローコードサービス）'], true);
+  addTableRow(ws0, ['CDN', 'Font Awesome 6.4、Google Fonts、Chart.js 4.4']);
+  addTableRow(ws0, ['地図', 'OpenStreetMap + Nominatim + Leaflet.js 1.9.4'], true);
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート2: 機能要件
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws1 = wb.addWorksheet('機能要件');
+  ws1.columns = [{ width: 28 }, { width: 20 }, { width: 60 }];
+
+  sectionH1(ws1, '3. 機能要件');
+
+  // 3.1
+  sectionH2(ws1, '3.1 認証・アクセス管理');
+  addTableHeader(ws1, ['項目', '', '内容']);
+  addTableRow(ws1, ['ログイン', '', 'パスワード認証（マスターパスワード / ログインパスワードの2種）']);
+  addTableRow(ws1, ['セッション管理', '', 'ブラウザセッション単位（sessionStorage）'], true);
+  addTableRow(ws1, ['将来要件', '', 'アカウント別権限管理（管理者 / 一般スタッフの2ロール）']);
+
+  // 3.2
+  sectionH2(ws1, '3.2 ダッシュボード');
+  sectionH3(ws1, '3.2.1 スケジュール・進行中タブ');
+  ['来店予定ウィジェット：今日・翌日の来店予定インフルエンサー一覧（名前・案件名・時刻）',
+   '来店スケジュールカレンダー：2ヶ月表示、日付セルに件数バッジ、日付クリックで一覧ポップアップ',
+   'インフルエンサー案件（進行中）：件数バッジ付きテーブル',
+   'サブスク/スポット（契約中）：契約中サービス一覧',
+   'チケット販売（進行中）：進行中チケット一覧'].forEach(t => bodyRow(ws1, '・' + t));
+
+  blank(ws1);
+  sectionH3(ws1, '3.2.2 分析タブ');
+  ['KPIカード：総売上 / 総利益 / 利益率 / 案件数',
+   '売上カテゴリ別比率グラフ（インフルエンサー案件 / サブスク・スポット / チケット販売）',
+   '月別売上テーブル（期間フィルター付き・全列ソート対応）',
+   '戦略コメント（日次自動更新・localStorageキャッシュ）'].forEach(t => bodyRow(ws1, '・' + t));
+
+  blank(ws1);
+  sectionH3(ws1, '3.2.3 セールスタブ');
+  ['案件獲得状況・提案数・成約率等の営業指標',
+   '戦略コメント（日次自動更新）'].forEach(t => bodyRow(ws1, '・' + t));
+
+  // 3.3
+  sectionH2(ws1, '3.3 クライアント管理');
+  addTableHeader(ws1, ['機能', '', '詳細']);
+  [['一覧表示', '', '会社名・支店/部署名・担当者名・メール・電話・ステータスのテーブル表示'],
+   ['検索', '', '会社名・担当者名・メールで絞り込み'],
+   ['新規登録・編集', '', 'モーダルフォーム（会社名・支店部署名・担当者・連絡先・住所・銀行情報・適格請求書番号・備考）'],
+   ['削除', '', 'ソフトデリート（is_deleted フラグ）'],
+   ['担当者複数登録', '', 'クライアントに複数の担当者（名前・メール・電話）を登録可能'],
+   ['クライアント結合', '', '重複クライアントを選択→優先クライアントに案件・サービス・担当者を移行→不要クライアント削除'],
+   ['CSVインポート', '', 'ドラッグ&ドロップ対応'],
+   ['CSVエクスポート', '', 'フォーマット選択→ダウンロード']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  // 3.4
+  sectionH2(ws1, '3.4 インフルエンサー管理');
+  addTableHeader(ws1, ['機能', '', '詳細']);
+  [['一覧表示', '', 'カードグリッド（SNS種別・フォロワー数・ジャンル・エリア・単価・稼働可否・お気に入り）'],
+   ['絞り込み', '', 'SNS種別 / ジャンル / エリア / フォロワー数レンジ / 稼働可否 / お気に入り'],
+   ['検索', '', '名前・ジャンル・エリアでテキスト検索'],
+   ['新規登録・編集', '', 'モーダルフォーム（活動名・本名・SNS情報・フォロワー数・ジャンル・活動エリア・連絡先・所属事務所・単価・銀行情報・適格請求書番号・備考）'],
+   ['削除', '', 'ソフトデリート'],
+   ['稼働可否トグル', '', '一覧カードから即時切り替え'],
+   ['お気に入り登録', '', '★マーク切り替え'],
+   ['自動キャスティング', '', 'フィルター条件に合うインフルエンサーを自動絞り込み→案件への一括アサイン'],
+   ['CSV対応', '', 'インポート（テンプレートCSV付き）・エクスポート']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  // 3.5
+  sectionH2(ws1, '3.5 インフルエンサー申請管理');
+  sectionH3(ws1, '3.5.1 申請フォーム（apply.html — 公開ページ）');
+  ['3ステップウィザード（基本情報 → SNS情報 → 確認・送信）',
+   '入力：活動名・本名・メール・電話・活動エリア（チップ複数選択）・ジャンル・メインSNS・SNS URL・フォロワー数・サブSNS・依頼単価・自己PR',
+   '年齢確認チェック（20歳以上 / 居酒屋・バー・喫煙可能店舗PR案件向け）',
+   '個人情報同意チェック付き・バリデーション付き',
+   '申請完了後：申請ID・審査フロー説明を表示'
+  ].forEach(t => bodyRow(ws1, '・' + t));
+
+  blank(ws1);
+  sectionH3(ws1, '3.5.2 申請管理（管理画面内）');
+  ['集計バー：全件数 / 審査待ち / 承認済み / 拒否',
+   'ステータスタブ：すべて / 審査待ち（赤バッジ付き） / 承認済み / 拒否',
+   '検索：名前・SNS・ジャンル・エリア・メールで絞り込み',
+   '承認：インフルエンサーテーブルへ自動登録、活動エリアを反映、稼働可フラグON',
+   '拒否：ステータスを rejected に更新',
+   'サイドバー赤バッジ：審査待ち件数をリアルタイム表示'
+  ].forEach(t => bodyRow(ws1, '・' + t));
+
+  // 3.6
+  sectionH2(ws1, '3.6 案件管理（インフルエンサー案件）');
+  sectionH3(ws1, '案件一覧');
+  addTableHeader(ws1, ['項目', '', '詳細']);
+  [['表示列', '', '案件名・クライアント・PR商品・期間・予算・キャスティングボード・ステータス・担当者・クライアント担当者・利益率・コメント'],
+   ['フィルタ', '', 'ステータス（提案中/進行中/請求中/完了/キャンセル）・テキスト検索'],
+   ['インライン編集', '', 'PR商品名・ステータス・担当者・クライアント担当者・コメント'],
+   ['操作ボタン', '', '編集 / 削除 / 報告書 / 請求書 / スケジュール共有'],
+   ['削除', '', '確認ダイアログ後、案件＋関連アサインを同時削除']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  blank(ws1);
+  sectionH3(ws1, 'アサインステータスフロー');
+  bodyRow(ws1, '調整中 → 受入可否 → 確定 → 支払OK → 支払申請済');
+
+  blank(ws1);
+  sectionH3(ws1, 'キャスティングボード ベルマーク通知（3段階）');
+  addTableHeader(ws1, ['色', '', '条件']);
+  addTableRow(ws1, ['🔴 赤', '', 'needs_attention=true（受入不可通知あり）']);
+  addTableRow(ws1, ['🟣 紫', '', '受入可否ステータスの未回答あり'], true);
+  addTableRow(ws1, ['🟡 黄', '', '支払申請済ステータスあり']);
+
+  // 3.7
+  sectionH2(ws1, '3.7 スケジュール共有（schedule-share.html — クライアント向け）');
+  ['URLパラメータ ?pid= で案件IDを受け取り来店スケジュールを表示',
+   '表示対象：受入可否 または 確定 ステータスのアサイン',
+   '受入可 → request_status: 確定、needs_attention: false',
+   '受入不可 → request_status: 調整中、needs_attention: true',
+   'スマートフォン対応（カードレイアウト）',
+   '認証不要（URLを知っている人が閲覧可能）'
+  ].forEach(t => bodyRow(ws1, '・' + t));
+
+  // 3.8〜3.13
+  sectionH2(ws1, '3.8 サブスク/スポット管理');
+  addTableHeader(ws1, ['機能', '', '詳細']);
+  [['種別', '', 'サブスク（月額）/ スポット（単発）'],
+   ['ステータス', '', '提案中 / 契約中 / 完了 / キャンセル'],
+   ['請求書生成', '', '請求明細（invoice_items）を元にA4印刷対応'],
+   ['経費管理', '', '固定費・売上比率（%）の2種類、経費合計・利益をリアルタイム表示']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  sectionH2(ws1, '3.9 チケット管理');
+  addTableHeader(ws1, ['機能', '', '詳細']);
+  [['チケット番号', '', '自動採番（TKT-YYYYMM-NNN）'],
+   ['ステータス', '', '提案中 / 進行中 / 請求中 / 完了'],
+   ['提案書作成', '', 'フォーマット選択 → 印刷用HTML生成（contenteditable対応）'],
+   ['入金通知書', '', '月選択 → 手数料計算 → 印刷用PDF出力']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  sectionH2(ws1, '3.10 チケット商品管理・提案書');
+  addTableHeader(ws1, ['機能', '', '詳細']);
+  [['カードグリッド', '', '商品画像・店舗名・商品名・価格・手数料率・ステータス'],
+   ['ステータス自動判定', '', '期間内の商品を自動で「販売中」として表示'],
+   ['提案書（商品数1）', '', 'A4縦1ページ、全フィールドcontenteditable'],
+   ['提案書（商品数2）', '', 'A4横2ページ（2商品並列）+ OpenStreetMapマップ'],
+   ['フォーマット管理', '', '提案書フォーマットのCRUD（商品数1・2に対応）']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  sectionH2(ws1, '3.13 CSV機能');
+  addTableHeader(ws1, ['対象', 'インポート', 'エクスポート']);
+  [['クライアント', '○（ドラッグ&ドロップ対応）', '○'],
+   ['インフルエンサー', '○（テンプレートCSV付き）', '○'],
+   ['案件', '○', '○']
+  ].forEach((d, i) => addTableRow(ws1, d, i % 2 === 1));
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート3: 非機能要件
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws2 = wb.addWorksheet('非機能要件');
+  ws2.columns = [{ width: 28 }, { width: 70 }];
+
+  sectionH1(ws2, '4. 非機能要件');
+
+  sectionH2(ws2, '4.1 対応環境');
+  addTableHeader(ws2, ['項目', '要件']);
+  addTableRow(ws2, ['ブラウザ', 'Chrome / Safari / Edge 最新版']);
+  addTableRow(ws2, ['デバイス', 'PC（主要）・スマートフォン（スケジュール共有ページのみ完全対応）'], true);
+  addTableRow(ws2, ['言語', '日本語のみ']);
+
+  sectionH2(ws2, '4.2 パフォーマンス');
+  addTableHeader(ws2, ['項目', '要件']);
+  addTableRow(ws2, ['初期表示', '一覧画面：3秒以内']);
+  addTableRow(ws2, ['データ更新', '即時反映（楽観的更新 or リロード）'], true);
+  addTableRow(ws2, ['キャッシュ', 'フロントエンドキャッシュ（TTL 30秒）でAPI呼び出し削減']);
+
+  sectionH2(ws2, '4.3 セキュリティ');
+  addTableHeader(ws2, ['項目', '要件']);
+  addTableRow(ws2, ['管理画面', '認証必須（未ログイン時はログインページへリダイレクト）']);
+  addTableRow(ws2, ['公開ページ', 'スケジュール共有・申請フォームは認証不要（URL共有型）'], true);
+  addTableRow(ws2, ['パスワード', '現行はプレーンテキスト保存 → 本番ではハッシュ化必須（bcrypt等）']);
+
+  sectionH2(ws2, '4.4 可用性・運用');
+  addTableHeader(ws2, ['項目', '要件']);
+  addTableRow(ws2, ['バックアップ', 'DBレベルで定期バックアップ']);
+  addTableRow(ws2, ['ソフトデリート', '主要テーブルは is_deleted フラグによる論理削除'], true);
+  addTableRow(ws2, ['エラー表示', '操作失敗時はトースト通知でユーザーに明示']);
+
+  sectionH2(ws2, '10. 本番開発での注意点（現行プロトタイプとの差異）');
+  addTableHeader(ws2, ['項目', '内容']);
+  [['パスワード管理', '現行はプレーンテキスト → ハッシュ化（bcrypt等）必須'],
+   ['認証方式', '現行はsessionStorage → JWT or セッションCookieへの置き換えを推奨'],
+   ['データAPI', '現行は外部ローコードAPI → 独自バックエンド（Node.js / Python等）構築を推奨'],
+   ['ファイルアップロード', '現行はbase64（300KB以内）→ サーバー側ストレージ（S3等）への保存を推奨'],
+   ['大量データ対応', '現行は最大500件/テーブルをフロントで保持 → サーバーサイドのページネーション・フィルタが必要'],
+   ['モバイル対応', '現行は管理画面はPC向け、schedule-share.html / apply.html のみスマホ対応']
+  ].forEach((d, i) => addTableRow(ws2, d, i % 2 === 1));
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート4: データモデル
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws3 = wb.addWorksheet('データモデル');
+  ws3.columns = [{ width: 30 }, { width: 25 }, { width: 65 }];
+
+  sectionH1(ws3, '5. データモデル（テーブル一覧）');
+  addTableHeader(ws3, ['テーブル名', '説明', '主要フィールド']);
+  [['clients', 'クライアント情報', 'company_name, branch_dept, client_name, email, phone, status, address, bank_info, qualified_number'],
+   ['client_contacts', 'クライアント担当者', 'client_id, name, email, phone, is_deleted'],
+   ['influencers', 'インフルエンサー情報', 'name, real_name, sns_type, account_url, followers, genre, area, contact_email, phone, agency, unit_price, available, bank_info, qualified_number, favorite'],
+   ['influencer_applications', 'インフルエンサー申請', 'name, email, phone, sns_main, sns_url, followers, genre, region, price_min, price_max, pr_text, sub_sns, status(pending/approved/rejected), admin_note, influencer_id, applied_at'],
+   ['projects', 'インフルエンサー案件', 'project_name, client_id, contact_id, product_name, description, start_date, end_date, post_date, budget, status, manager, notes'],
+   ['project_influencers', '案件×インフル紐付け', 'project_id, influencer_id, request_status, request_amount, visit_datetime, post_url, post_date, notes, reach, likes, comments, saves, needs_attention'],
+   ['products', 'サブスク/スポット案件', 'product_type, product_name, client_id, total_amount, monthly_fee, start_date, end_date, status, recurring'],
+   ['product_expenses', '経費', 'product_id, expense_name, expense_type(fixed/ratio), amount, ratio'],
+   ['invoice_items', '請求明細', 'product_id, invoice_number, item_name, unit_price, quantity, subtotal, tax_rate, invoice_date, due_date'],
+   ['services', 'サービスマスタ', 'service_name, service_type, is_default, is_deleted, sort_order'],
+   ['tickets', 'チケット', 'ticket_number, title, client_id, category_id, status, assignee, start_date, end_date, ticket_product_ids, billing_items'],
+   ['ticket_categories', 'チケットカテゴリ', 'name, color, sort_order, is_deleted'],
+   ['ticket_products', 'チケット商品マスタ', 'store_name, product_name, product_detail, image_url, sale_price, commission_collection, commissions, status, sort_order'],
+   ['proposal_formats', '提案書フォーマット', 'format_name, product_count(1/2), sort_order, title, store_name, store_addr, store_hours, prod1_img, prod1_name, prod1_detail, prod1_price'],
+   ['company_info', '企業情報', 'company_name, address, phone, email, logo_data, bank_info, qualified_number, master_password, login_password, profit_alert_rate, fiscal_month'],
+   ['accounts', 'ユーザーアカウント', 'name, password, role, is_deleted']
+  ].forEach((d, i) => addTableRow(ws3, d, i % 2 === 1));
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート5: 画面一覧
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws4 = wb.addWorksheet('画面一覧');
+  ws4.columns = [{ width: 28 }, { width: 35 }, { width: 20 }, { width: 40 }];
+
+  sectionH1(ws4, '6. 画面一覧');
+  addTableHeader(ws4, ['画面名', 'URL', 'アクセス制御', '説明']);
+  [['ログイン', 'login.html', '公開', 'パスワード認証'],
+   ['ダッシュボード', 'index.html#dashboard', '認証必須', 'KPI・カレンダー・進行中案件'],
+   ['クライアント管理', 'index.html#clients', '認証必須', 'CRUD・結合・CSV'],
+   ['インフルエンサー管理', 'index.html#influencers', '認証必須', 'CRUD・自動キャスティング'],
+   ['案件一覧', 'index.html#projects', '認証必須', '案件管理・キャスティング'],
+   ['スケジュール管理', 'index.html#schedule', '認証必須', '月別カレンダー'],
+   ['サブスク/スポット管理', 'index.html#products', '認証必須', 'サービス・請求管理'],
+   ['チケット管理', 'index.html#tickets', '認証必須', 'チケット・提案書'],
+   ['チケット商品管理', 'index.html#ticket-products', '認証必須', '商品・フォーマット管理'],
+   ['インフルエンサー申請管理', 'index.html#inf-applications', '認証必須', '申請審査'],
+   ['企業情報', 'index.html#company', '認証必須', '設定管理'],
+   ['スケジュール共有', 'schedule-share.html?pid=xxx', '公開（URL共有）', 'クライアント向け受入可否回答'],
+   ['申請フォーム', 'apply.html', '公開', 'インフルエンサー自己申請']
+  ].forEach((d, i) => addTableRow(ws4, d, i % 2 === 1));
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // シート6: 将来実装候補・帳票
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const ws5 = wb.addWorksheet('将来実装候補・帳票');
+  ws5.columns = [{ width: 10 }, { width: 30 }, { width: 65 }];
+
+  sectionH1(ws5, '7. 将来実装候補（現行未実装）');
+  addTableHeader(ws5, ['優先度', '機能', '概要']);
+  [['高', '投稿前素材確認機能', 'インフルエンサーから届いた投稿テキスト・画像・動画URLをアサインに登録し、スケジュール共有ページでクライアントが「修正なし」「修正あり（コメント）」を選択'],
+   ['高', 'マルチアカウント権限管理', 'アカウントごとに管理者・一般の2ロール。一般は閲覧・登録のみ（削除不可）'],
+   ['中', 'メール通知', '申請承認・受入可否回答時にメール送信（SMTP連携）'],
+   ['中', 'チケット→案件紐付け', 'チケットと案件・クライアントの関連付け'],
+   ['中', '案件ステータス自動更新', '期日到来で自動ステータス遷移（例：end_date 経過で「完了」）'],
+   ['低', 'チケット商品ドラッグ&ドロップ並び替え', 'sort_order の視覚的管理'],
+   ['低', '提案書テンプレート保存', '編集内容をテンプレートとして保存・再利用'],
+   ['低', 'ソフトデリート復元UI', '削除済みレコードの一覧表示・復元']
+  ].forEach((d, i) => addTableRow(ws5, d, i % 2 === 1));
+
+  ws5.columns = [{ width: 25 }, { width: 20 }, { width: 55 }];
+  sectionH1(ws5, '8. 帳票・出力物');
+  addTableHeader(ws5, ['帳票', '形式', '説明']);
+  [['報告書', '印刷用HTML（新規ウィンドウ）', '案件のSNS別実績（フォロワー・リーチ・いいね・コメント・保存数）レポート'],
+   ['請求書', '印刷用HTML', 'サブスク/スポット案件の請求書（会社情報・銀行情報・請求明細・消費税）'],
+   ['提案書（商品数1）', '印刷用HTML A4縦', 'チケット商品の提案書（1商品）'],
+   ['提案書（商品数2）', '印刷用HTML A4横 2ページ', 'チケット商品の提案書（2商品）＋地図'],
+   ['入金通知書', '印刷用HTML', 'チケット販売の手数料計算・精算額通知書']
+  ].forEach((d, i) => addTableRow(ws5, d, i % 2 === 1));
+
+  sectionH1(ws5, '9. 外部サービス連携');
+  addTableHeader(ws5, ['サービス', '用途', '認証']);
+  [['Google Fonts', 'フォント（Noto Sans JP / Inter）', '不要'],
+   ['Font Awesome 6.4', 'アイコン', '不要'],
+   ['Chart.js 4.4', 'グラフ描画', '不要'],
+   ['OpenStreetMap + Nominatim', '住所→座標変換（提案書マップ）', '不要・無料'],
+   ['Leaflet.js 1.9.4', '地図表示（提案書）', '不要']
+  ].forEach((d, i) => addTableRow(ws5, d, i % 2 === 1));
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ダウンロード
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'CCORE_開発要件書_20260526.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  btn.disabled = false;
+  btn.textContent = '✅ ダウンロード完了';
+  setTimeout(() => { btn.textContent = '⬇ Excel をダウンロード'; }, 3000);
+}
+</script>
+</body>
+</html>

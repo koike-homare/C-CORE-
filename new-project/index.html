@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C-CORE | タスク・企業管理</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='32' r='32' fill='%231a1a2e'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='32' font-family='Arial Black,sans-serif' font-weight='900' fill='%23a78bfa'>C</text></svg>">
+  <!-- セッションチェック：未ログインならログイン画面へ -->
+  <script>
+    (function(){
+      if (sessionStorage.getItem('ccore_task_session') !== 'ok') {
+        document.documentElement.style.display = 'none';
+        location.replace('login.html');
+      } else {
+        document.documentElement.style.display = '';
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     サイドバー
+══════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-text">C-CORE</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a href="#" class="nav-item active" data-page="tasks">
+          <i class="fas fa-check-square"></i>
+          <span>タスク管理</span>
+          <span class="nav-badge" id="nav-badge-tasks" style="display:none;"></span>
+        </a>
+      </li>
+    </ul>
+    <ul class="sidebar-nav-bottom">
+      <li class="sidebar-nav-divider"></li>
+      <li>
+        <a href="#" class="nav-item" data-page="company">
+          <i class="fas fa-building-user"></i>
+          <span>企業情報</span>
+        </a>
+      </li>
+      <li class="sidebar-backup-item">
+        <button class="nav-backup-btn" id="navBackupBtn">
+          <i class="fas fa-database"></i>
+          <span>DB バックアップ</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- ── バックアップモーダル ── -->
+<div class="modal-overlay" id="backupModal" style="display:none;">
+  <div class="modal backup-modal">
+    <div class="backup-modal-header">
+      <i class="fas fa-database backup-modal-icon"></i>
+      <div>
+        <h3 class="backup-modal-title">DB バックアップ</h3>
+        <p class="backup-modal-sub">全テーブル・全レコードをJSONファイルで保存します</p>
+      </div>
+      <button class="modal-close-x" id="backupModalClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="backup-modal-body">
+      <div class="backup-table-list" id="backupTableList"></div>
+      <div class="backup-progress-wrap" id="backupProgressWrap" style="display:none;">
+        <div class="backup-progress-bar-track">
+          <div class="backup-progress-bar-fill" id="backupProgressFill"></div>
+        </div>
+        <p class="backup-progress-label" id="backupProgressLabel">準備中...</p>
+      </div>
+    </div>
+    <div class="backup-modal-footer">
+      <div class="backup-info-row">
+        <i class="fas fa-info-circle" style="color:#6366f1;"></i>
+        <span>バックアップJSONをチャットに貼り付けると完全復旧できます</span>
+      </div>
+      <div class="backup-btn-row">
+        <button class="btn btn-secondary" id="backupCancelBtn">キャンセル</button>
+        <button class="btn btn-primary backup-start-btn" id="backupStartBtn">
+          <i class="fas fa-download"></i> バックアップ開始
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     メインコンテンツ
+══════════════════════════════════════════ -->
+<div class="main-wrapper">
+  <header class="top-header">
+    <button class="sidebar-toggle" id="sidebarToggle">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="header-title" id="headerTitle">タスク管理</div>
+    <div class="header-actions">
+      <button class="btn btn-primary" id="headerAddBtn" style="display:none;">
+        <i class="fas fa-plus"></i> <span id="headerAddBtnText">新規登録</span>
+      </button>
+      <button class="btn-logout" id="btn-logout" title="ログアウト">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>ログアウト</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ══════════════════════════════════════
+         タスク管理ページ
+    ══════════════════════════════════════ -->
+    <section class="page active" id="page-tasks">
+
+      <!-- スタッフ切り替えタブバー -->
+      <div class="task-staff-bar" id="task-staff-bar">
+        <button class="task-staff-tab active" data-staff="dashboard">
+          <i class="fas fa-chart-bar"></i> ダッシュボード
+        </button>
+        <div id="task-staff-tabs"></div>
+      </div>
+
+      <!-- クイックリンクバー -->
+      <div class="ql-bar" id="ql-bar">
+        <div class="ql-btn-list" id="ql-btn-list"></div>
+        <button class="ql-manage-btn" id="ql-manage-btn" title="リンクを管理">
+          <i class="fas fa-cog"></i>
+        </button>
+      </div>
+
+      <!-- タスクダッシュボードパネル -->
+      <div class="task-panel" id="task-panel-dashboard">
+
+        <!-- インフォメーション＋新店情報 横並び -->
+        <div class="dash-top-row">
+
+          <!-- インフォメーション -->
+          <div class="task-dash-section ann-section" id="ann-section">
+            <div class="task-dash-section-hd ann-section-hd">
+              <span><i class="fas fa-bullhorn"></i> インフォメーション</span>
+              <button class="ann-add-row-btn" id="ann-add-row-btn" title="行を追加">
+                <i class="fas fa-plus"></i> 追加
+              </button>
+            </div>
+            <div class="ann-table-wrap" id="ann-table-wrap">
+              <table class="ann-table">
+                <thead>
+                  <tr>
+                    <th class="ann-th ann-th--drag"></th>
+                    <th class="ann-th ann-th--title">タイトル</th>
+                    <th class="ann-th ann-th--period">期間</th>
+                    <th class="ann-th ann-th--url">URL</th>
+                    <th class="ann-th ann-th--act"></th>
+                  </tr>
+                </thead>
+                <tbody id="ann-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 新店情報 -->
+          <div class="task-dash-section shop-info-section" id="shop-info-section">
+            <div class="task-dash-section-hd shop-info-hd">
+              <span><i class="fas fa-store"></i> 新店情報</span>
+              <button class="shop-info-add-btn" id="shop-info-add-btn" title="新しい店舗を追加">
+                <i class="fas fa-plus"></i> 追加
+              </button>
+            </div>
+            <div class="shop-info-form" id="shop-info-form" style="display:none;">
+              <div class="shop-info-form-grid">
+                <input type="text" id="si-store-name" class="shop-info-inp" placeholder="店舗名 *" maxlength="100">
+                <div class="si-construction-wrap">
+                  <div class="si-date-picker-group">
+                    <input type="text" id="si-con-start" class="shop-info-inp si-date-inp" placeholder="工事開始日" readonly>
+                    <span class="si-date-sep">〜</span>
+                    <input type="text" id="si-con-end" class="shop-info-inp si-date-inp" placeholder="工事終了日" readonly>
+                  </div>
+                  <div class="si-cal-popup" id="si-cal-popup" style="display:none;"></div>
+                </div>
+                <input type="text" id="si-open-date"  class="shop-info-inp si-date-inp" placeholder="オープン日" readonly>
+                <input type="text" id="si-reception"  class="shop-info-inp si-date-inp" placeholder="レセプション" readonly>
+                <input type="text" id="si-sponsor"    class="shop-info-inp" placeholder="協賛メーカー" maxlength="200">
+              </div>
+              <div class="shop-info-form-footer">
+                <button class="shop-info-btn-cancel" id="si-cancel-btn">キャンセル</button>
+                <button class="shop-info-btn-save" id="si-save-btn"><i class="fas fa-save"></i> 保存</button>
+              </div>
+            </div>
+            <div class="shop-info-table-wrap" id="shop-info-table-wrap">
+              <table class="shop-info-table">
+                <thead>
+                  <tr>
+                    <th>店舗名</th>
+                    <th>工事期間</th>
+                    <th>オープン日</th>
+                    <th>レセプション</th>
+                    <th>協賛メーカー</th>
+                    <th class="shop-info-act-col"></th>
+                  </tr>
+                </thead>
+                <tbody id="shop-info-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div><!-- /.dash-top-row -->
+
+        <!-- サマリーカード -->
+        <div class="task-summary-cards" id="task-summary-cards"></div>
+
+        <!-- スタッフ別時間・タスク概要テーブル -->
+        <div class="task-dash-section">
+          <div class="task-dash-section-hd">
+            <i class="fas fa-user-clock"></i> スタッフ別 時間・タスク状況
+            <span class="ovw-legend">
+              <span class="ovw-legend-item"><span class="ovw-face ovw-face--ok">😊</span> ～100%</span>
+              <span class="ovw-legend-item"><span class="ovw-face ovw-face--over1">😐</span> 101～110%</span>
+              <span class="ovw-legend-item"><span class="ovw-face ovw-face--over2">😣</span> 111%～</span>
+              <span class="ovw-legend-item"><span class="ovw-face ovw-face--holiday">💤</span> 公休</span>
+            </span>
+          </div>
+          <div id="task-staff-overview"></div>
+          <div id="task-daily-hours"></div>
+        </div>
+
+      </div><!-- /#task-panel-dashboard -->
+
+      <!-- スタッフ別パネル（動的生成） -->
+      <div id="task-staff-panels"></div>
+
+    </section>
+
+    <!-- ══════════════════════════════════════
+         企業情報ページ
+    ══════════════════════════════════════ -->
+    <section class="page" id="page-company">
+      <div class="company-info-layout">
+
+        <!-- 左カラム：基本情報 + パスワード管理 -->
+        <div class="company-left-col">
+
+          <div class="company-card">
+            <div class="company-card-header">
+              <i class="fas fa-building-user"></i>
+              <span>基本情報</span>
+            </div>
+            <div class="company-card-body">
+
+              <!-- ロゴエリア -->
+              <div class="company-logo-area" id="company-logo-area">
+                <div class="company-logo-preview" id="company-logo-preview">
+                  <div class="company-logo-placeholder" id="company-logo-placeholder">
+                    <i class="fas fa-image"></i>
+                    <span>ロゴ未設定</span>
+                  </div>
+                  <img id="company-logo-img" src="" alt="会社ロゴ" style="display:none;">
+                </div>
+                <div class="company-logo-actions">
+                  <label class="btn btn-secondary btn-sm company-logo-upload-btn" for="company-logo-input">
+                    <i class="fas fa-upload"></i> ロゴをアップロード
+                  </label>
+                  <input type="file" id="company-logo-input" accept="image/*" style="display:none;">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-logo-delete" style="display:none;">
+                    <i class="fas fa-trash"></i> 削除
+                  </button>
+                </div>
+                <p class="company-logo-hint">PNG / JPG / SVG・推奨サイズ: 横400px以上</p>
+              </div>
+              <div class="company-divider"></div>
+
+              <!-- 表示モード -->
+              <div id="company-view-mode">
+                <dl class="company-dl">
+                  <dt>会社名</dt><dd id="cv-name">—</dd>
+                  <dt>会社名（カナ）</dt><dd id="cv-name-kana">—</dd>
+                  <dt>郵便番号</dt><dd id="cv-postal">—</dd>
+                  <dt>住所</dt><dd id="cv-address">—</dd>
+                  <dt>電話番号</dt><dd id="cv-phone">—</dd>
+                  <dt>FAX</dt><dd id="cv-fax">—</dd>
+                  <dt>メールアドレス</dt><dd id="cv-email">—</dd>
+                  <dt>Webサイト</dt><dd id="cv-website">—</dd>
+                  <dt>代表者名</dt><dd id="cv-representative">—</dd>
+                </dl>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+
+              <!-- 編集モード -->
+              <div id="company-edit-mode" style="display:none;">
+                <div class="form-grid">
+                  <div class="form-group full">
+                    <label>会社名 <span class="required">*</span></label>
+                    <input type="text" id="ci-name" placeholder="例: 株式会社○○プランニング">
+                  </div>
+                  <div class="form-group full">
+                    <label>会社名（カナ）</label>
+                    <input type="text" id="ci-name-kana" placeholder="例: カブシキガイシャマルマルプランニング">
+                  </div>
+                  <div class="form-group">
+                    <label>郵便番号</label>
+                    <input type="text" id="ci-postal" placeholder="例: 150-0001">
+                  </div>
+                  <div class="form-group full">
+                    <label>住所</label>
+                    <input type="text" id="ci-address" placeholder="例: 東京都渋谷区神宮前1-2-3">
+                  </div>
+                  <div class="form-group">
+                    <label>電話番号</label>
+                    <input type="tel" id="ci-phone" placeholder="例: 03-1234-5678">
+                  </div>
+                  <div class="form-group">
+                    <label>FAX</label>
+                    <input type="tel" id="ci-fax" placeholder="例: 03-1234-5679">
+                  </div>
+                  <div class="form-group full">
+                    <label>メールアドレス</label>
+                    <input type="email" id="ci-email" placeholder="例: info@example.com">
+                  </div>
+                  <div class="form-group full">
+                    <label>Webサイト</label>
+                    <input type="url" id="ci-website" placeholder="例: https://example.com">
+                  </div>
+                  <div class="form-group full">
+                    <label>代表者名</label>
+                    <input type="text" id="ci-representative" placeholder="例: 山田 太郎">
+                  </div>
+                </div>
+                <div class="company-edit-actions">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-cancel">キャンセル</button>
+                  <button class="btn btn-primary btn-sm" id="btn-company-save">
+                    <i class="fas fa-save"></i> 保存
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- パスワード管理カード -->
+          <div class="company-card company-pw-card">
+            <div class="company-card-header">
+              <i class="fas fa-lock"></i>
+              <span>パスワード管理</span>
+            </div>
+            <div class="company-card-body">
+              <div id="company-pw-view-mode">
+                <dl class="company-dl">
+                  <dt>
+                    <i class="fas fa-key" style="color:var(--primary);margin-right:5px;font-size:12px;"></i>
+                    マスターパスワード
+                  </dt>
+                  <dd id="cv-master-pw-row" class="pw-display-row">
+                    <span class="pw-masked" id="cv-master-pw">未設定</span>
+                    <button type="button" class="pw-eye-btn" id="btn-toggle-master-pw" title="表示/非表示" style="display:none;">
+                      <i class="fas fa-eye" id="icon-master-pw"></i>
+                    </button>
+                  </dd>
+                  <dt>
+                    <i class="fas fa-sign-in-alt" style="color:var(--primary);margin-right:5px;font-size:12px;"></i>
+                    ログインパスワード
+                  </dt>
+                  <dd id="cv-login-pw-row" class="pw-display-row">
+                    <span class="pw-masked" id="cv-login-pw">未設定</span>
+                    <button type="button" class="pw-eye-btn" id="btn-toggle-login-pw" title="表示/非表示" style="display:none;">
+                      <i class="fas fa-eye" id="icon-login-pw"></i>
+                    </button>
+                  </dd>
+                </dl>
+                <p class="company-logo-hint" style="margin-top:4px;margin-bottom:12px;">
+                  <i class="fas fa-shield-halved" style="margin-right:4px;"></i>
+                  パスワードは暗号化して保存されます。
+                </p>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-pw-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+              <div id="company-pw-edit-mode" style="display:none;">
+                <form onsubmit="return false;" autocomplete="off">
+                  <input type="text" name="username" style="display:none;" aria-hidden="true" autocomplete="username">
+                  <div class="form-grid">
+                    <div class="form-group full">
+                      <label>マスターパスワード</label>
+                      <div class="pw-input-wrap">
+                        <input type="password" id="ci-master-pw" class="pw-input" placeholder="マスターパスワードを入力" autocomplete="new-password">
+                        <button type="button" class="pw-eye-btn pw-eye-btn--input" data-target="ci-master-pw" data-icon="icon-edit-master">
+                          <i class="fas fa-eye" id="icon-edit-master"></i>
+                        </button>
+                      </div>
+                      <div class="form-hint">このシステムの最上位パスワードです。</div>
+                    </div>
+                    <div class="form-group full">
+                      <label>ログインパスワード</label>
+                      <div class="pw-input-wrap">
+                        <input type="password" id="ci-login-pw" class="pw-input" placeholder="ログインパスワードを入力" autocomplete="new-password">
+                        <button type="button" class="pw-eye-btn pw-eye-btn--input" data-target="ci-login-pw" data-icon="icon-edit-login">
+                          <i class="fas fa-eye" id="icon-edit-login"></i>
+                        </button>
+                      </div>
+                      <div class="form-hint">日常ログイン時に使用するパスワードです。</div>
+                    </div>
+                  </div>
+                  <div class="company-edit-actions">
+                    <button class="btn btn-ghost btn-sm" id="btn-company-pw-cancel">キャンセル</button>
+                    <button class="btn btn-primary btn-sm" id="btn-company-pw-save">
+                      <i class="fas fa-save"></i> 保存
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /company-left-col -->
+
+        <!-- 右カラム：口座情報・インボイス・利益率・決算期 -->
+        <div class="company-right-col">
+
+          <!-- 口座情報カード -->
+          <div class="company-card">
+            <div class="company-card-header">
+              <i class="fas fa-university"></i>
+              <span>振込先口座情報</span>
+            </div>
+            <div class="company-card-body">
+              <div id="company-bank-view-mode">
+                <dl class="company-dl">
+                  <dt>銀行名</dt><dd id="cv-bank-name">—</dd>
+                  <dt>支店名</dt><dd id="cv-bank-branch">—</dd>
+                  <dt>口座種別</dt><dd id="cv-bank-type">—</dd>
+                  <dt>口座番号</dt><dd id="cv-bank-number">—</dd>
+                  <dt>口座名義</dt><dd id="cv-bank-holder">—</dd>
+                </dl>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-bank-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+              <div id="company-bank-edit-mode" style="display:none;">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>銀行名</label>
+                    <input type="text" id="ci-bank-name" placeholder="例: 三菱UFJ銀行">
+                  </div>
+                  <div class="form-group">
+                    <label>支店名</label>
+                    <input type="text" id="ci-bank-branch" placeholder="例: 渋谷支店">
+                  </div>
+                  <div class="form-group">
+                    <label>口座種別</label>
+                    <select id="ci-bank-type">
+                      <option value="">— 選択 —</option>
+                      <option value="普通">普通</option>
+                      <option value="当座">当座</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>口座番号</label>
+                    <input type="text" id="ci-bank-number" placeholder="例: 1234567" maxlength="8">
+                  </div>
+                  <div class="form-group full">
+                    <label>口座名義（カナ）</label>
+                    <input type="text" id="ci-bank-holder" placeholder="例: カブシキガイシャマルマル">
+                  </div>
+                </div>
+                <div class="company-edit-actions">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-bank-cancel">キャンセル</button>
+                  <button class="btn btn-primary btn-sm" id="btn-company-bank-save">
+                    <i class="fas fa-save"></i> 保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- インボイス情報カード -->
+          <div class="company-card">
+            <div class="company-card-header">
+              <i class="fas fa-receipt"></i>
+              <span>インボイス情報</span>
+            </div>
+            <div class="company-card-body">
+              <div id="company-invoice-view-mode">
+                <dl class="company-dl">
+                  <dt>適格事業者番号</dt><dd id="cv-qualified-number">—</dd>
+                </dl>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-invoice-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+              <div id="company-invoice-edit-mode" style="display:none;">
+                <div class="form-group full" style="margin-bottom:12px;">
+                  <label>適格事業者番号</label>
+                  <div class="qualified-number-wrap">
+                    <span class="qualified-prefix">T</span>
+                    <input type="text" id="ci-qualified-number" placeholder="13桁の数字" maxlength="13" pattern="[0-9]*" inputmode="numeric">
+                  </div>
+                  <div class="form-hint">先頭のTは自動付加されます。</div>
+                </div>
+                <div class="form-group full">
+                  <label>備考</label>
+                  <textarea id="ci-notes" rows="3" placeholder="その他メモ"></textarea>
+                </div>
+                <div class="company-edit-actions">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-invoice-cancel">キャンセル</button>
+                  <button class="btn btn-primary btn-sm" id="btn-company-invoice-save">
+                    <i class="fas fa-save"></i> 保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 利益率アラートカード -->
+          <div class="company-card">
+            <div class="company-card-header">
+              <i class="fas fa-triangle-exclamation"></i>
+              <span>利益率アラート設定</span>
+            </div>
+            <div class="company-card-body">
+              <div id="company-profit-view-mode">
+                <dl class="company-dl">
+                  <dt>アラート閾値</dt>
+                  <dd id="cv-profit-alert-rate">—</dd>
+                </dl>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-profit-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+              <div id="company-profit-edit-mode" style="display:none;">
+                <div class="form-group" style="margin-bottom:4px;">
+                  <label>アラート閾値（%）</label>
+                  <div class="profit-alert-input-row">
+                    <input type="number" id="ci-profit-alert-rate" min="0" max="100" step="0.1" placeholder="例: 30" style="width:120px;">
+                    <span class="profit-alert-unit">%</span>
+                  </div>
+                </div>
+                <p class="form-hint">この値を下回る案件の利益率を赤字で警告表示します。空欄にするとアラート無効。</p>
+                <div class="company-edit-actions">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-profit-cancel">キャンセル</button>
+                  <button class="btn btn-primary btn-sm" id="btn-company-profit-save">
+                    <i class="fas fa-save"></i> 保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 決算期カード -->
+          <div class="company-card">
+            <div class="company-card-header">
+              <i class="fas fa-calendar-alt"></i>
+              <span>決算期設定</span>
+            </div>
+            <div class="company-card-body">
+              <div id="company-fiscal-view-mode">
+                <dl class="company-dl">
+                  <dt>決算期（開始月）</dt>
+                  <dd id="cv-fiscal-month">—</dd>
+                </dl>
+                <button class="btn btn-primary btn-sm company-edit-btn" id="btn-company-fiscal-edit">
+                  <i class="fas fa-edit"></i> 編集
+                </button>
+              </div>
+              <div id="company-fiscal-edit-mode" style="display:none;">
+                <div class="form-group" style="margin-bottom:4px;">
+                  <label>決算期開始月</label>
+                  <select id="ci-fiscal-month" style="width:140px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;">
+                    <option value="1">1月始まり（1月〜12月）</option>
+                    <option value="2">2月始まり</option>
+                    <option value="3">3月始まり</option>
+                    <option value="4">4月始まり（4月〜翌3月）</option>
+                    <option value="5">5月始まり</option>
+                    <option value="6">6月始まり</option>
+                    <option value="7">7月始まり</option>
+                    <option value="8">8月始まり</option>
+                    <option value="9">9月始まり</option>
+                    <option value="10">10月始まり</option>
+                    <option value="11">11月始まり</option>
+                    <option value="12">12月始まり</option>
+                  </select>
+                </div>
+                <div class="company-edit-actions">
+                  <button class="btn btn-ghost btn-sm" id="btn-company-fiscal-cancel">キャンセル</button>
+                  <button class="btn btn-primary btn-sm" id="btn-company-fiscal-save">
+                    <i class="fas fa-save"></i> 保存
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /company-right-col -->
+      </div><!-- /company-info-layout -->
+
+      <!-- アカウント管理カード（全幅） -->
+      <div class="company-card account-mgmt-card" style="margin-top:24px;">
+        <div class="company-card-header">
+          <i class="fas fa-users-cog"></i>
+          <span>アカウント管理</span>
+          <button class="btn btn-primary btn-sm" id="btn-account-add" style="margin-left:auto;">
+            <i class="fas fa-plus"></i> アカウントを追加
+          </button>
+        </div>
+        <div class="company-card-body" style="padding:0;">
+          <table class="account-table" id="account-table">
+            <thead>
+              <tr>
+                <th>氏名 / ポジション</th>
+                <th style="width:110px;">想定稼働時間</th>
+                <th style="width:200px;"><i class="fas fa-calendar-alt" style="color:#4285F4;margin-right:4px;"></i>カレンダーID</th>
+                <th style="width:160px;"><i class="fas fa-code" style="color:#6366f1;margin-right:4px;"></i>埋め込みコード</th>
+                <th style="width:80px;"></th>
+                <th style="width:48px;"></th>
+              </tr>
+            </thead>
+            <tbody id="account-table-body">
+              <tr class="account-empty-row" id="account-empty-row">
+                <td colspan="6">
+                  <div class="account-empty">
+                    <i class="fas fa-user-slash"></i>
+                    <span>アカウントが登録されていません</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section><!-- /#page-company -->
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     モーダル群
+══════════════════════════════════════ -->
+
+<!-- タスク作成・編集モーダル -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3><i class="fas fa-check-square"></i> <span id="task-modal-title">タスクを追加</span></h3>
+      <button class="modal-close" data-modal="modal-task"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="task-id">
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label class="form-label">タスク名 <span class="required">*</span></label>
+          <input type="text" id="task-title" class="form-control" placeholder="タスク名を入力">
+        </div>
+        <div class="form-group">
+          <label class="form-label">優先度</label>
+          <select id="task-priority" class="form-control">
+            <option value="高">高</option>
+            <option value="中" selected>中</option>
+            <option value="低">低</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">担当者</label>
+          <select id="task-assignee" class="form-control">
+            <option value="">— 未設定 —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">引継者</label>
+          <select id="task-handover" class="form-control">
+            <option value="">— なし —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">店舗名・クライアント</label>
+          <input type="text" id="task-store-name" class="form-control" placeholder="店舗名・案件名など">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">開始日</label>
+          <input type="date" id="task-start-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">完了予定日</label>
+          <input type="date" id="task-due-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">予測作業時間（h）</label>
+          <input type="number" id="task-estimated-hours" class="form-control" min="0" step="0.5" placeholder="0.0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">進捗</label>
+          <select id="task-progress" class="form-control">
+            <option value="未着手">未着手</option>
+            <option value="進行中">進行中</option>
+            <option value="確認待ち">確認待ち</option>
+            <option value="完了">完了</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">今日のタスク</label>
+          <div class="task-toggle-wrap">
+            <input type="checkbox" id="task-is-today" class="task-toggle-check">
+            <label for="task-is-today" class="task-toggle-label">今日作業する</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">今日の作業時間（h）</label>
+          <input type="number" id="task-today-hours" class="form-control" min="0" step="0.5" placeholder="0.0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メモ</label>
+        <textarea id="task-notes" class="form-control" rows="2" placeholder="補足・詳細を入力"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-task">キャンセル</button>
+      <button class="btn btn-danger" id="task-delete-btn" style="display:none;"><i class="fas fa-trash"></i> 削除</button>
+      <button class="btn" id="task-save-btn"><i class="fas fa-save"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- アカウント追加/編集モーダル -->
+<div class="modal-overlay" id="modal-account">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-cog"></i> <span id="account-modal-title">アカウントを追加</span></h3>
+      <button class="modal-close" data-modal="modal-account"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="account-id">
+      <div class="form-group">
+        <label>氏名 <span class="required">*</span></label>
+        <input type="text" id="account-name" placeholder="例: 山田 太郎">
+      </div>
+      <div class="form-group">
+        <label>ポジション</label>
+        <input type="text" id="account-position" placeholder="例: ディレクター">
+      </div>
+      <div class="form-group">
+        <label>管轄（担当エリア）</label>
+        <input type="text" id="account-jurisdiction" placeholder="例: 関西エリア">
+      </div>
+      <div class="form-group">
+        <label>想定稼働時間（h/日）</label>
+        <input type="number" id="account-daily-limit" min="0" max="24" step="0.5" placeholder="例: 8">
+      </div>
+      <div class="form-group">
+        <label>カレンダーID <span style="font-size:11px;color:var(--gray-400);">（Google Calendar）</span></label>
+        <input type="text" id="account-calendar-id" placeholder="例: xxxxx@group.calendar.google.com">
+      </div>
+      <div class="form-group">
+        <label>カレンダー埋め込みコード</label>
+        <textarea id="account-embed-code" rows="3" placeholder="Google Calendarの埋め込みiframeコードを貼り付け"></textarea>
+      </div>
+      <div class="form-group">
+        <label>スケジュールメモ</label>
+        <textarea id="account-schedule-memo" rows="2" placeholder="勤務時間・休日パターンなど"></textarea>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="account-is-holiday">
+          公休日スタッフ（稼働時間0扱い）
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-account">キャンセル</button>
+      <button class="btn btn-danger" id="account-delete-btn" style="display:none;"><i class="fas fa-trash"></i> 削除</button>
+      <button class="btn btn-primary" id="account-save-btn"><i class="fas fa-save"></i> 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- クイックリンク管理モーダル -->
+<div class="modal-overlay" id="modal-ql-manage">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-link"></i> クイックリンク管理</h3>
+      <button class="modal-close" data-modal="modal-ql-manage"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="ql-manage-list"></div>
+      <button class="btn btn-secondary btn-sm" id="btn-ql-add" style="margin-top:12px;">
+        <i class="fas fa-plus"></i> リンクを追加
+      </button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal="modal-ql-manage">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- トースト通知 -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

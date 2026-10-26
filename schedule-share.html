@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>来店スケジュール | Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:      #6366f1;
+      --primary-dk:   #4f46e5;
+      --success:      #10b981;
+      --success-lt:   #ecfdf5;
+      --danger:       #ef4444;
+      --danger-lt:    #fef2f2;
+      --purple:       #8b5cf6;
+      --purple-lt:    #f5f3ff;
+      --gray-50:      #f9fafb;
+      --gray-100:     #f3f4f6;
+      --gray-200:     #e5e7eb;
+      --gray-300:     #d1d5db;
+      --gray-400:     #9ca3af;
+      --gray-500:     #6b7280;
+      --gray-600:     #4b5563;
+      --gray-700:     #374151;
+      --gray-800:     #1f2937;
+      --white:        #ffffff;
+    }
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+    }
+
+    /* ── ヘッダー ── */
+    .page-header {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      padding: 28px 24px 24px;
+      color: #fff;
+    }
+    .header-logo { font-size: 12px; font-weight: 700; letter-spacing: .08em; opacity: .8; margin-bottom: 12px; }
+    .header-title { font-size: 20px; font-weight: 700; line-height: 1.4; margin-bottom: 8px; }
+    .header-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; opacity: .9; }
+    .header-meta-item { display: flex; align-items: center; gap: 5px; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      background: rgba(255,255,255,0.25); color: #fff;
+    }
+
+    /* ── メイン ── */
+    .page-body { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+
+    /* ── 件数バナー ── */
+    .confirmed-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--success-lt); border: 1.5px solid #6ee7b7;
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+      font-size: 14px; font-weight: 700; color: #065f46;
+    }
+    .confirmed-banner i { color: var(--success); font-size: 18px; }
+
+    /* 受入可否待ちバナー */
+    .review-banner {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--purple-lt); border: 1.5px solid #c4b5fd;
+      border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
+      font-size: 13px; font-weight: 600; color: #5b21b6;
+    }
+    .review-banner i { color: var(--purple); font-size: 18px; }
+
+    /* ── テーブルカード ── */
+    .schedule-card { background: var(--white); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .schedule-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .schedule-table thead tr { background: var(--gray-800); }
+    .schedule-table thead th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: #fff; letter-spacing: .04em; white-space: nowrap; overflow: hidden; }
+    .schedule-table tbody tr { border-bottom: 1px solid var(--gray-100); transition: background .15s; }
+    .schedule-table tbody tr:last-child { border-bottom: none; }
+    .schedule-table td { padding: 14px 16px; font-size: 14px; color: var(--gray-700); vertical-align: middle; overflow: hidden; }
+    /* 列幅 — 名前列を広げて右余白を削減 */
+    .col-num       { width: 40px; }
+    .col-name      { width: 200px; }
+    .col-followers { width: 72px; text-align: right; }
+    .col-visit     { width: 148px; }
+    .col-companions{ width: 60px; text-align: center; }
+    .col-accept    { width: 96px; text-align: center; }
+
+    .td-num { font-size: 12px; font-weight: 700; color: var(--gray-400); text-align: center; }
+    .inf-name-cell { display: flex; align-items: center; gap: 10px; }
+    .inf-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+    }
+    .inf-name-text { font-weight: 700; font-size: 14px; line-height: 1.4; word-break: break-all; overflow-wrap: break-word; overflow: hidden; }
+    .followers-val { font-size: 13px; font-weight: 600; color: var(--primary); white-space: nowrap; text-align: right; display: block; }
+    .visit-val { font-size: 13px; font-weight: 500; white-space: nowrap; }
+    .visit-empty { color: var(--gray-300); }
+    .companions-val { font-size: 13px; font-weight: 600; color: var(--gray-700); white-space: nowrap; }
+    .companions-empty { color: var(--gray-300); }
+
+    /* ── フォロワー・来店日時・同行者セル（PC：独立列） ── */
+    .mobile-row { display: contents; } /* PCでは不要なラッパー */
+    .mobile-item { display: contents; }
+    .mobile-label { display: none; } /* PC ではヘッダーがあるので非表示 */
+    .mobile-value { font-size: 13px; color: var(--gray-700); font-weight: 500; }
+
+    /* ── 受入可否ボタン ── */
+    .accept-cell { text-align: center; }
+    .accept-btn-group { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .btn-accept, .btn-reject {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: all .15s; white-space: nowrap;
+      min-width: 80px; justify-content: center;
+    }
+    .btn-accept { background: var(--success); color: #fff; }
+    .btn-accept:hover { background: #059669; }
+    .btn-reject { background: var(--white); color: var(--danger); border: 1.5px solid var(--danger); }
+    .btn-reject:hover { background: var(--danger-lt); }
+    .btn-accept:disabled, .btn-reject:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* 受入済みバッジ */
+    .accepted-badge, .rejected-badge, .pending-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; white-space: nowrap;
+    }
+    .accepted-badge { background: var(--success-lt); color: #065f46; border: 1px solid #6ee7b7; }
+    .rejected-badge { background: var(--danger-lt);  color: #991b1b; border: 1px solid #fca5a5; }
+    .pending-badge  { background: var(--purple-lt);  color: #5b21b6; border: 1px solid #c4b5fd; }
+
+    /* ── スマホ：カードレイアウト ── */
+    @media (max-width: 640px) {
+      .page-body { padding: 16px 12px 48px; }
+
+      /* カード全体のoverflow */
+      .schedule-card { background: transparent; box-shadow: none; border-radius: 0; overflow: visible; }
+
+      /* テーブルをブロックに切り替え */
+      .schedule-table,
+      .schedule-table thead,
+      .schedule-table tbody,
+      .schedule-table tr,
+      .schedule-table th,
+      .schedule-table td {
+        display: block;
+        width: 100%;
+      }
+      .schedule-table thead { display: none; }
+      /* グループヘッダー行はカード風に（行として残す） */
+      .schedule-table .group-header-row {
+        display: block !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border-radius: 10px 10px 0 0 !important;
+        margin-bottom: 0 !important;
+        padding: 0 !important;
+        margin-top: 20px !important;
+      }
+      .schedule-table .group-header-row:first-child { margin-top: 0 !important; }
+      .schedule-table .group-header-row td {
+        border-radius: 10px 10px 0 0 !important;
+        border-top: none !important;
+        width: 100% !important;
+      }
+
+      /* 各行をカード化 */
+      .schedule-table tbody tr {
+        background: var(--white);
+        border-bottom: none;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.08);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* 全 td のパディングをリセット */
+      .schedule-table td {
+        padding: 0;
+        border: none;
+        width: 100%;
+      }
+
+      /* 番号セル：非表示（名前でわかるため） */
+      .schedule-table td.td-num { display: none; }
+
+      /* 名前 */
+      .inf-name-cell { gap: 12px; }
+      .inf-name-text { font-size: 16px; word-break: keep-all; overflow-wrap: break-word; }
+      .inf-avatar { width: 40px; height: 40px; font-size: 16px; }
+
+      /* スマホ：フォロワー/来店日時/同行者をカード内に横並び */
+      .col-followers, .col-visit, .col-companions { display: none; }
+      .schedule-table .mobile-row {
+        display: flex !important;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        background: var(--gray-50);
+        border-radius: 8px;
+      }
+      .schedule-table .mobile-item {
+        display: flex !important;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 80px;
+      }
+      .schedule-table .mobile-label {
+        display: block !important;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: .05em;
+      }
+      .schedule-table .mobile-value { font-size: 14px; font-weight: 600; color: var(--gray-700); }
+      .followers-val { font-size: 14px !important; text-align: left !important; display: inline !important; }
+      .visit-val { font-size: 14px !important; white-space: normal !important; }
+      .companions-val { font-size: 14px !important; }
+      /* スマホ：mobile-row セルを表示 */
+      .schedule-table td.td-mobile-info { display: block !important; }
+
+      /* 受入可否ボタン：縦並び全幅 */
+      .accept-btn-group {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .btn-accept, .btn-reject {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+        border-radius: 10px;
+        min-width: unset;
+      }
+      .accepted-badge, .rejected-badge, .pending-badge {
+        width: 100%;
+        justify-content: center;
+        padding: 12px;
+        font-size: 14px;
+        border-radius: 10px;
+      }
+    }
+
+    /* ローディング・空・エラー */
+    .loading-state, .empty-state, .error-state {
+      text-align: center; padding: 48px 24px;
+    }
+    .loading-state, .empty-state { color: var(--gray-400); }
+    .error-state { color: #dc2626; }
+    .loading-state i, .empty-state i, .error-state i { font-size: 36px; margin-bottom: 12px; display: block; }
+    .loading-state i { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state p, .empty-state p, .error-state p { font-size: 14px; }
+
+    /* フッター */
+    .page-footer { text-align: center; margin-top: 32px; font-size: 11px; color: var(--gray-400); }
+
+    /* メモボックス */
+    .memo-box {
+      background: var(--white);
+      border: 1.5px solid #c7d2fe;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 20px;
+      box-shadow: 0 1px 4px rgba(99,102,241,.08);
+    }
+    .memo-box-header {
+      background: #eef2ff;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .memo-box-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4338ca;
+    }
+    .memo-edit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1.5px solid #a5b4fc;
+      background: #fff;
+      color: #4338ca;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .memo-edit-btn:hover { background: #eef2ff; border-color: #6366f1; }
+    .memo-display {
+      padding: 16px 18px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--gray-700);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .memo-display--empty { color: var(--gray-400); font-style: italic; }
+    .memo-edit-area {
+      padding: 12px 18px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .memo-edit-area.open { display: flex; }
+    .memo-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #c7d2fe;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--gray-700);
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .memo-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .memo-edit-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .memo-save-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 18px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .memo-save-btn:hover { background: var(--primary-dk); }
+    .memo-save-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .memo-cancel-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1.5px solid var(--gray-200);
+      background: #fff;
+      color: var(--gray-600);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .memo-cancel-btn:hover { background: var(--gray-50); }
+    .memo-status { font-size: 12px; font-weight: 600; margin-right: auto; }
+    .memo-status--saved  { color: var(--success); }
+    .memo-status--saving { color: var(--gray-400); }
+    .memo-status--error  { color: var(--danger); }
+    .memo-hint { font-size: 11px; color: var(--gray-400); }
+
+    /* ── グループヘッダー ── */
+    .group-header-row td {
+      background: linear-gradient(90deg, #eef2ff 0%, #f5f3ff 100%) !important;
+      padding: 10px 16px;
+      border-bottom: 2px solid #6366f1;
+      border-top: 1px solid #e0e7ff;
+    }
+    .group-header-inner {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .group-header-inner i { color: #6366f1; font-size: 13px; flex-shrink: 0; }
+    .group-header-label { font-size: 13px; font-weight: 800; color: #3730a3; flex: 1; }
+    .group-header-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #6366f1; color: #fff; font-size: 11px; font-weight: 700;
+      padding: 2px 9px; border-radius: 999px; min-width: 28px;
+    }
+    /* スマホではグループヘッダーをカード風に */
+    @media (max-width: 640px) {
+      .group-header-row {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin-bottom: 4px !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      .group-header-row td {
+        border-radius: 10px 10px 0 0 !important;
+        border-top: none !important;
+      }
+    }
+
+    /* トースト */
+    .toast-wrap {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 9999; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    }
+    .toast {
+      background: var(--gray-800); color: #fff; padding: 10px 20px;
+      border-radius: 24px; font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      animation: fadeInUp .3s ease;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error   { background: var(--danger); }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="header-logo">Collection — 来店スケジュール</div>
+  <div class="header-title" id="header-project-name">読み込み中...</div>
+  <div class="header-meta" id="header-meta"></div>
+</header>
+
+<main class="page-body">
+  <div id="main-content">
+    <div class="loading-state">
+      <i class="fas fa-circle-notch"></i>
+      <p>スケジュールを読み込んでいます...</p>
+    </div>
+  </div>
+  <footer class="page-footer" id="page-footer"></footer>
+</main>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+  // ── ユーティリティ ──
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function formatFollowers(n) {
+    const num = Number(n);
+    if (isNaN(num)) return String(n);
+    if (num >= 10000) return (num / 10000).toFixed(1).replace(/\.0$/,'') + '万';
+    if (num >= 1000)  return (num / 1000).toFixed(1).replace(/\.0$/,'') + '千';
+    return num.toLocaleString();
+  }
+  async function apiFetch(path, method='GET', body=null) {
+    const opts = { method, headers: {} };
+    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    const res = await fetch(path, opts);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (method === 'PATCH' || method === 'PUT') return res.json();
+    return res.json();
+  }
+
+  // 全ページ取得（limit=200 で繰り返しフェッチして全件集める）
+  async function apiFetchAll(basePath) {
+    const limit = 200;
+    let page = 1;
+    let allData = [];
+    while (true) {
+      const sep = basePath.includes('?') ? '&' : '?';
+      const res = await apiFetch(`${basePath}${sep}limit=${limit}&page=${page}`);
+      const rows = res.data || [];
+      allData = allData.concat(rows);
+      if (allData.length >= (res.total || 0) || rows.length < limit) break;
+      page++;
+    }
+    return allData;
+  }
+  function showToast(msg, type='success') {
+    const wrap = document.getElementById('toast-wrap');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i> ${esc(msg)}`;
+    wrap.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(), 300); }, 3000);
+  }
+
+  // ── 受入可否ボタンのアクション ──
+  async function handleAccept(assignId, infName, action) {
+    const btn = document.querySelector(`[data-action-id="${assignId}"]`);
+    if (btn) btn.style.pointerEvents = 'none';
+
+    try {
+      if (action === 'accept') {
+        // 受入可 → ステータスを「確定」に変更 + 通知フラグ書き込み
+        await apiFetch(`tables/project_influencers/${assignId}`, 'PATCH', {
+          request_status: '確定',
+          needs_attention: false,
+          reply_action:   'accept',
+          reply_notified: false,
+        });
+        const cell = document.querySelector(`.accept-cell[data-assign-id="${assignId}"]`);
+        if (cell) cell.innerHTML = `<span class="accepted-badge"><i class="fas fa-check-circle"></i> 確定</span>`;
+        showToast(`「${infName}」を受入可（確定）に設定しました`, 'success');
+
+      } else {
+        // 受入不可 → ステータスを「調整中」に変更 + 来店日時クリア + 通知フラグ書き込み
+        await apiFetch(`tables/project_influencers/${assignId}`, 'PATCH', {
+          request_status: '調整中',
+          needs_attention: true,
+          visit_datetime:  null,
+          reply_action:   'reject',
+          reply_notified: false,
+        });
+        const cell = document.querySelector(`.accept-cell[data-assign-id="${assignId}"]`);
+        if (cell) cell.innerHTML = `<span class="rejected-badge"><i class="fas fa-times-circle"></i> 受入不可</span>`;
+        showToast(`「${infName}」を受入不可（調整中）に変更しました`, 'error');
+      }
+    } catch(e) {
+      showToast('更新に失敗しました: ' + e.message, 'error');
+      if (btn) btn.style.pointerEvents = '';
+    }
+  }
+
+  // ── メイン処理 ──
+  async function init() {
+    const params    = new URLSearchParams(location.search);
+    const projectId = params.get('pid');
+    if (!projectId) { renderError('URLが正しくありません（pid パラメータがありません）'); return; }
+
+    try {
+      // project_influencers と project_groups はこのプロジェクトのみ取得（全件）
+      const [projectData, assignRows, influencersRes, clientsRes, groupRows] = await Promise.all([
+        apiFetch(`tables/projects/${projectId}`),
+        apiFetchAll(`tables/project_influencers`),
+        apiFetch('tables/influencers?limit=500'),
+        apiFetch('tables/clients?limit=500'),
+        apiFetchAll(`tables/project_groups`),
+      ]);
+
+      const project = projectData;
+      const infMap = {};
+      (influencersRes.data||[]).forEach(i => { infMap[i.id] = i; });
+      const clientMap = {};
+      (clientsRes.data||[]).forEach(c => { clientMap[c.id] = c; });
+
+      // グループ順（sort_order 順）
+      const projectGroups = (groupRows||[])
+        .filter(g => String(g.project_id) === String(projectId))
+        .sort((a, b) => (a.sort_order ?? 9999) - (b.sort_order ?? 9999));
+      const groupOrder = projectGroups.map(g => g.group_name);
+
+      // 対象：「受入可否」または「確定」ステータス → グループ順→来店日時順ソート（「お断り/待ち」・リスト非表示グループは除外）
+      const EXCLUDED_GROUP_SHARE = 'お断り/待ち';
+
+      // ① project_groups.include_in_list が false のグループ名セット（新方式）
+      const _isValFalse = v => v === false || v === 'false' || v === 0;
+      const excludedGroupNames = new Set(
+        projectGroups
+          .filter(g => _isValFalse(g.include_in_list))
+          .map(g => g.group_name)
+      );
+
+      // ② project_influencers 側の include_in_list も参照（旧方式フォールバック）
+      // グループ内に1人でも include_in_list === false がいればグループ全体を除外
+      const thisProjectAssigns = (assignRows||[]).filter(a => String(a.project_id) === String(projectId));
+      const groupMemberMap = new Map();
+      thisProjectAssigns.forEach(a => {
+        const gName = a.group_name || '';
+        if (!groupMemberMap.has(gName)) groupMemberMap.set(gName, []);
+        groupMemberMap.get(gName).push(a);
+      });
+      groupMemberMap.forEach((members, gName) => {
+        if (gName === EXCLUDED_GROUP_SHARE) return;
+        // グループ内に1人でも include_in_list === false がいれば除外
+        if (members.some(a => _isValFalse(a.include_in_list))) {
+          excludedGroupNames.add(gName);
+        }
+      });
+
+      // project_id は数値/文字列どちらで返っても一致するよう String() 変換して比較
+      const targets = (assignRows||[])
+        .filter(a => String(a.project_id) === String(projectId) &&
+          (a.request_status === '受入可否' || a.request_status === '確定') &&
+          a.group_name !== EXCLUDED_GROUP_SHARE &&
+          !excludedGroupNames.has(a.group_name || ''))
+        .sort((a, b) => {
+          const gi_a = groupOrder.indexOf(a.group_name || '');
+          const gi_b = groupOrder.indexOf(b.group_name || '');
+          const ga = gi_a === -1 ? 9999 : gi_a;
+          const gb = gi_b === -1 ? 9999 : gi_b;
+          if (ga !== gb) return ga - gb;
+          if (!a.visit_datetime && !b.visit_datetime) return 0;
+          if (!a.visit_datetime) return 1;
+          if (!b.visit_datetime) return -1;
+          return a.visit_datetime.localeCompare(b.visit_datetime);
+        });
+
+      const client = clientMap[project.client_id];
+
+      // ヘッダー
+      document.getElementById('header-project-name').textContent = project.project_name || '案件名未設定';
+      const metaItems = [];
+      if (client) metaItems.push(`<span class="header-meta-item"><i class="fas fa-building"></i> ${esc(client.company_name)}</span>`);
+      if (project.status) metaItems.push(`<span class="status-badge"><i class="fas fa-circle"></i> ${esc(project.status)}</span>`);
+      document.getElementById('header-meta').innerHTML = metaItems.join('');
+      document.title = `来店スケジュール — ${project.project_name || ''}`;
+      document.getElementById('page-footer').textContent =
+        '生成日時: ' + new Date().toLocaleString('ja-JP') + ' / Collection 案件管理システム';
+
+      if (targets.length === 0) {
+        document.getElementById('main-content').innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <p>「受入可否」または「確定」ステータスのインフルエンサーがいません</p>
+          </div>`;
+        return;
+      }
+
+      // 受入可否ペンディング件数・確定件数
+      const pendingCount   = targets.filter(a => a.request_status === '受入可否').length;
+      const confirmedCount = targets.filter(a => a.request_status === '確定').length;
+
+      // バナー
+      let bannerHtml = '';
+      if (pendingCount > 0) {
+        bannerHtml += `
+          <div class="review-banner">
+            <i class="fas fa-bell"></i>
+            受入可否の確認が ${pendingCount}件 あります。各インフルエンサーの受入可否をご回答ください。
+          </div>`;
+      }
+      if (confirmedCount > 0) {
+        bannerHtml += `
+          <div class="confirmed-banner">
+            <i class="fas fa-check-circle"></i>
+            確定 ${confirmedCount}名
+          </div>`;
+      }
+
+      // ── グループMap生成 ──
+      const groupMap = new Map();
+      targets.forEach(a => {
+        const gName = (a.group_name && a.group_name.trim()) ? a.group_name : null;
+        const key   = gName || '__nogroup__';
+        if (!groupMap.has(key)) groupMap.set(key, { label: gName, items: [] });
+        groupMap.get(key).items.push(a);
+      });
+      const orderedKeys = [
+        ...groupOrder.filter(n => groupMap.has(n)),
+        ...([...groupMap.keys()].filter(k => k !== '__nogroup__' && !groupOrder.includes(k))),
+        ...(groupMap.has('__nogroup__') ? ['__nogroup__'] : []),
+      ];
+      const multiGroup = orderedKeys.length > 1;
+
+      // ── テーブル行をグループ別に生成 ──
+      let globalIdx = 0;
+      const rows = orderedKeys.map(key => {
+        const g = groupMap.get(key);
+        const groupLabel = g.label || 'グループ未設定';
+
+        // グループヘッダー行（複数グループのみ）
+        const headerRow = multiGroup
+          ? `<tr class="group-header-row">
+              <td colspan="7">
+                <div class="group-header-inner">
+                  <i class="fas fa-layer-group"></i>
+                  <span class="group-header-label">${esc(groupLabel)}</span>
+                  <span class="group-header-badge">${g.items.length}名</span>
+                </div>
+              </td>
+            </tr>`
+          : '';
+
+        const memberRows = g.items.map(a => {
+          globalIdx++;
+          const inf = infMap[a.influencer_id];
+          if (!inf) return '';
+
+          let acceptCellInner;
+          if (a.request_status === '受入可否') {
+            acceptCellInner = `
+              <div class="accept-btn-group" data-action-id="${esc(a.id)}">
+                <button class="btn-accept" onclick="handleAccept('${esc(a.id)}','${esc(inf.name)}','accept')">
+                  <i class="fas fa-check"></i> 受入可
+                </button>
+                <button class="btn-reject" onclick="handleAccept('${esc(a.id)}','${esc(inf.name)}','reject')">
+                  <i class="fas fa-times"></i> 受入不可
+                </button>
+              </div>`;
+          } else if (a.request_status === '確定') {
+            acceptCellInner = `<span class="accepted-badge"><i class="fas fa-check-circle"></i> 確定</span>`;
+          } else {
+            acceptCellInner = `<span class="pending-badge">確認待ち</span>`;
+          }
+
+          return `
+            <tr>
+              <td class="td-num col-num">${globalIdx}</td>
+              <td class="col-name">
+                <div class="inf-name-cell">
+                  <div class="inf-avatar"><i class="fas fa-user"></i></div>
+                  <div style="display:flex;flex-direction:column;gap:1px;">
+                    <span class="inf-name-text">${esc(inf.name)}</span>
+                    ${inf.sub_name ? `<span style="font-size:10px;font-weight:400;color:#9ca3af;line-height:1.3;">${esc(inf.sub_name)}</span>` : ''}
+                  </div>
+                </div>
+              </td>
+              <td class="col-followers">
+                <span class="followers-val">${inf.followers ? formatFollowers(inf.followers) : '<span style="color:var(--gray-300)">&mdash;</span>'}</span>
+              </td>
+              <td class="col-visit">
+                <span class="visit-val">${a.visit_datetime ? esc(a.visit_datetime.replace('T',' ')) : '<span class="visit-empty">未設定</span>'}</span>
+              </td>
+              <td class="col-companions" style="text-align:center;">
+                <span class="companions-val">${a.companions != null && a.companions !== '' ? esc(String(a.companions)) + '名' : '<span class="companions-empty">&mdash;</span>'}</span>
+              </td>
+              <td class="td-mobile-info" style="display:none;">
+                <div class="mobile-row">
+                  <div class="mobile-item">
+                    <span class="mobile-label">フォロワー</span>
+                    <span class="followers-val mobile-value">${inf.followers ? formatFollowers(inf.followers) : '&mdash;'}</span>
+                  </div>
+                  <div class="mobile-item">
+                    <span class="mobile-label">来店日時</span>
+                    <span class="mobile-value">${a.visit_datetime ? esc(a.visit_datetime.replace('T',' ')) : '<span style="color:var(--gray-300)">未設定</span>'}</span>
+                  </div>
+                  <div class="mobile-item">
+                    <span class="mobile-label">同行者</span>
+                    <span class="companions-val mobile-value">${a.companions != null && a.companions !== '' ? esc(String(a.companions)) + '名' : '<span class="companions-empty">&mdash;</span>'}</span>
+                  </div>
+                </div>
+              </td>
+              <td class="accept-cell col-accept" data-assign-id="${esc(a.id)}">${acceptCellInner}</td>
+            </tr>`;
+        }).join('');
+
+        return headerRow + memberRows;
+      }).join('');
+
+      document.getElementById('main-content').innerHTML = `
+        ${bannerHtml}
+        <div class="schedule-card">
+          <table class="schedule-table">
+            <colgroup>
+              <col class="col-num">
+              <col class="col-name">
+              <col class="col-followers">
+              <col class="col-visit">
+              <col class="col-companions">
+              <col style="display:none">
+              <col class="col-accept">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="col-num" style="width:40px;">#</th>
+                <th class="col-name">名前</th>
+                <th class="col-followers" style="text-align:right;">フォロワー</th>
+                <th class="col-visit">来店日時</th>
+                <th class="col-companions" style="text-align:center;">同行者</th>
+                <th style="display:none"></th>
+                <th class="accept-cell col-accept">受入可否</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+        ${renderMemoBox(project.schedule_memo || '', project.id)}`;
+
+      // メモ操作を初期化
+      initMemoBox(project.id, project.schedule_memo || '');
+
+    } catch(err) {
+      renderError('スケジュールの読み込みに失敗しました: ' + err.message);
+    }
+  }
+
+  // ── メモボックス HTML生成 ──
+  function renderMemoBox(memo, projectId) {
+    const hasContent = memo && memo.trim().length > 0;
+    return `
+    <div class="memo-box" id="memo-box">
+      <div class="memo-box-header">
+        <div class="memo-box-title">
+          <i class="fas fa-sticky-note"></i> スケジュールメモ
+        </div>
+        <button class="memo-edit-btn" id="memo-edit-btn" title="メモを編集">
+          <i class="fas fa-pen"></i> 編集
+        </button>
+      </div>
+      <div class="memo-display ${hasContent ? '' : 'memo-display--empty'}" id="memo-display">${hasContent ? esc(memo).replace(/\n/g,'<br>') : 'メモはまだありません'}</div>
+      <div class="memo-edit-area" id="memo-edit-area">
+        <textarea class="memo-textarea" id="memo-textarea" rows="5" placeholder="来店時の注意事項、持参物、連絡事項などを入力...">${esc(memo)}</textarea>
+        <div class="memo-edit-actions">
+          <span class="memo-status" id="memo-status"></span>
+          <button class="memo-cancel-btn" id="memo-cancel-btn"><i class="fas fa-times"></i> キャンセル</button>
+          <button class="memo-save-btn" id="memo-save-btn"><i class="fas fa-save"></i> 保存</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── メモ操作の初期化 ──
+  function initMemoBox(projectId, initialMemo) {
+    const editBtn    = document.getElementById('memo-edit-btn');
+    const cancelBtn  = document.getElementById('memo-cancel-btn');
+    const saveBtn    = document.getElementById('memo-save-btn');
+    const editArea   = document.getElementById('memo-edit-area');
+    const displayEl  = document.getElementById('memo-display');
+    const textareaEl = document.getElementById('memo-textarea');
+    const statusEl   = document.getElementById('memo-status');
+    if (!editBtn) return;
+
+    let currentMemo = initialMemo;
+
+    // 編集モードON
+    editBtn.addEventListener('click', () => {
+      textareaEl.value = currentMemo;
+      editArea.classList.add('open');
+      displayEl.style.display = 'none';
+      editBtn.style.display = 'none';
+      textareaEl.focus();
+    });
+
+    // キャンセル
+    cancelBtn.addEventListener('click', () => {
+      editArea.classList.remove('open');
+      displayEl.style.display = '';
+      editBtn.style.display = '';
+      statusEl.textContent = '';
+    });
+
+    // 保存
+    saveBtn.addEventListener('click', () => saveMemo());
+
+    // Ctrl+Enter で保存
+    textareaEl.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveMemo();
+      }
+    });
+
+    async function saveMemo() {
+      const newMemo = textareaEl.value;
+      saveBtn.disabled = true;
+      statusEl.textContent = '保存中...';
+      statusEl.className = 'memo-status memo-status--saving';
+      try {
+        await apiFetch(`tables/projects/${projectId}`, 'PATCH', { schedule_memo: newMemo });
+        currentMemo = newMemo;
+        // 表示更新
+        const hasContent = newMemo && newMemo.trim().length > 0;
+        displayEl.innerHTML = hasContent ? esc(newMemo).replace(/\n/g,'<br>') : 'メモはまだありません';
+        displayEl.className = 'memo-display' + (hasContent ? '' : ' memo-display--empty');
+        // 編集モードを閉じる
+        editArea.classList.remove('open');
+        displayEl.style.display = '';
+        editBtn.style.display = '';
+        statusEl.textContent = '';
+        showToast('メモを保存しました');
+      } catch(e) {
+        statusEl.textContent = '保存に失敗しました';
+        statusEl.className = 'memo-status memo-status--error';
+        showToast('保存に失敗しました: ' + e.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+  }
+
+  function renderError(msg) {
+    document.getElementById('header-project-name').textContent = 'エラー';
+    document.getElementById('main-content').innerHTML = `
+      <div class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>${esc(msg)}</p>
+      </div>`;
+  }
+
+  init();
+</script>
+</body>
+</html>

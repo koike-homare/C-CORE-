@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>グルメインフルエンサー募集 | Collection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Collection ブランドカラー */
+      --red:      #E50519;
+      --green:    #0AA54A;
+      --yellow:   #F8DE00;
+      --blue:     #1C7CC2;
+      --magenta:  #E70682;
+
+      /* ページ */
+      --white:    #ffffff;
+      --bg:       #fafafa;
+      --gray-50:  #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-300: #d1d5db;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-600: #4b5563;
+      --gray-700: #374151;
+      --gray-800: #1f2937;
+      --gray-900: #111827;
+
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+
+      /* エリアウィジェット用カラー（aw-* クラス互換） */
+      --primary:       #E50519;
+      --primary-dark:  #b30414;
+      --secondary:     #E50519;
+      --secondary-dark:#b30414;
+      --secondary-light:rgba(229,5,25,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--white);
+      color: var(--gray-800);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ============================================================
+       SVG 線画デコレーション（背景に浮かぶ手描き風）
+    ============================================================ */
+    .deco-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .deco-layer svg {
+      position: absolute;
+      opacity: 0.13;
+    }
+
+    /* ============================================================
+       HERO
+    ============================================================ */
+    .hero {
+      position: relative;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 20px 44px;
+      overflow: hidden;
+      text-align: center;
+      background: #fff;
+    }
+
+    /* 料理写真グリッド */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+    }
+    .hero-bg-cell { overflow: hidden; }
+    .hero-bg-cell img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.50) 0%,
+        rgba(255,255,255,0.70) 40%,
+        rgba(255,255,255,0.97) 100%
+      );
+    }
+
+    /* ロゴ */
+    .hero-logo {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+    .hero-logo img {
+      width: 90px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.10));
+    }
+
+    /* ヒーロー テキスト */
+    .hero-content {
+      position: relative;
+      z-index: 2;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--red);
+      color: #fff;
+      border-radius: 50px;
+      padding: 5px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .hero h1 {
+      font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+      font-size: clamp(28px, 7.5vw, 46px);
+      font-weight: 900;
+      line-height: 1.12;
+      color: var(--gray-900);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--red);
+    }
+    .hero-lead {
+      font-size: 14px;
+      color: var(--gray-600);
+      line-height: 1.7;
+      max-width: 320px;
+      margin: 0 auto;
+    }
+    .hero-lead strong { color: var(--red); font-weight: 700; }
+
+    /* ============================================================
+       カラーアクセント ライン（ページ区切り装飾）
+    ============================================================ */
+    .color-stripe {
+      display: flex;
+      height: 5px;
+      width: 100%;
+    }
+    .color-stripe span {
+      flex: 1;
+    }
+    .color-stripe span:nth-child(1) { background: var(--red); }
+    .color-stripe span:nth-child(2) { background: var(--green); }
+    .color-stripe span:nth-child(3) { background: var(--yellow); }
+    .color-stripe span:nth-child(4) { background: var(--blue); }
+    .color-stripe span:nth-child(5) { background: var(--magenta); }
+
+    /* ============================================================
+       FORM WRAP
+    ============================================================ */
+    .form-outer {
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+    }
+    /* 背景の線画デコ */
+    .form-deco-tl { top: 0; left: 0; width: 180px; height: 180px; }
+    .form-deco-br { bottom: 0; right: 0; width: 200px; height: 200px; }
+    .form-deco-mid { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; }
+
+    .form-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 8px 16px 80px;
+    }
+
+    /* セクションラベル */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 28px 0 14px;
+    }
+    .slabel-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1.5px;
+      background: var(--gray-100);
+    }
+
+    /* ============================================================
+       フォーム要素
+    ============================================================ */
+    .fgroup { margin-bottom: 14px; }
+
+    .flabel {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+    }
+    .flabel .req {
+      color: #fff;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      background: var(--red);
+    }
+    .flabel .opt {
+      background: var(--gray-100);
+      color: var(--gray-400);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .finput, .fselect, .ftextarea {
+      width: 100%;
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 13px 15px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--gray-800);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    .finput::placeholder, .ftextarea::placeholder { color: var(--gray-300); }
+    .finput:focus, .fselect:focus, .ftextarea:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(229,5,25,0.10);
+    }
+    .finput.error, .fselect.error, .ftextarea.error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(229,5,25,0.10);
+    }
+    .fselect {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239ca3af' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 38px;
+      cursor: pointer;
+    }
+    .ftextarea { resize: none; min-height: 96px; line-height: 1.65; }
+
+    .ferr {
+      font-size: 11px;
+      color: var(--red);
+      margin-top: 5px;
+      display: none;
+      align-items: center;
+      gap: 4px;
+    }
+    .ferr.show { display: flex; }
+    .fhint {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 5px;
+    }
+
+    /* ── 活動エリアウィジェット（aw-*）── */
+    .aw-region { }
+    .aw-region-hd {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .aw-region-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--gray-600);
+      white-space: nowrap;
+    }
+    .aw-region-all {
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1.5px solid var(--gray-200);
+      background: var(--white);
+      color: var(--gray-500);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.13s;
+    }
+    .aw-region-all:hover {
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .aw-region-all--on {
+      border-color: var(--primary) !important;
+      background: var(--primary) !important;
+      color: #fff !important;
+    }
+    .aw-prefs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .aw-pref-btn {
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1.5px solid var(--gray-200);
+      background: var(--white);
+      color: var(--gray-600);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.13s;
+    }
+    .aw-pref-btn:hover {
+      border-color: var(--secondary);
+      color: var(--secondary-dark);
+      background: var(--secondary-light);
+    }
+    .aw-pref-btn--on {
+      border-color: var(--secondary-dark) !important;
+      background: var(--secondary-dark) !important;
+      color: #fff !important;
+    }
+
+    .price-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .price-sep { color: var(--gray-300); font-size: 14px; text-align: center; }
+
+    /* ============================================================
+       利用規約アコーディオン
+    ============================================================ */
+    .terms-wrap {
+      margin-top: 20px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .terms-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--gray-50);
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-700);
+      gap: 8px;
+      text-align: left;
+    }
+    .terms-toggle:hover { background: var(--gray-100); }
+    .terms-toggle-icon {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--gray-500);
+      transition: transform 0.25s;
+    }
+    .terms-toggle.open .terms-toggle-icon { transform: rotate(180deg); }
+    .terms-body {
+      display: none;
+      padding: 0 16px 16px;
+      background: #fff;
+      max-height: 320px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .terms-body.open { display: block; }
+    .terms-body::-webkit-scrollbar { width: 4px; }
+    .terms-body::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+    .terms-section { margin-top: 14px; }
+    .terms-section h4 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-700);
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .terms-section p, .terms-section li {
+      font-size: 11.5px;
+      color: var(--gray-500);
+      line-height: 1.75;
+    }
+    .terms-section ul { padding-left: 16px; margin-top: 4px; }
+    .terms-section .note {
+      background: rgba(229,5,25,0.05);
+      border-left: 3px solid var(--red);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 11.5px;
+      color: var(--gray-600);
+      line-height: 1.7;
+      margin-top: 8px;
+    }
+    .terms-section .note strong { color: var(--red); }
+
+    /* ============================================================
+       SNSプラットフォーム
+    ============================================================ */
+    .sns-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .sns-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 12px 4px 10px;
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.18s;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--gray-500);
+    }
+    .sns-btn i { font-size: 20px; }
+    .sns-btn:active { transform: scale(0.95); }
+    .sns-btn[data-p="Instagram"] i { color: #e1306c; }
+    .sns-btn[data-p="TikTok"]    i { color: #1a1a1a; }
+    .sns-btn[data-p="YouTube"]   i { color: #ff0000; }
+    .sns-btn[data-p="X(Twitter)"]i { color: #1da1f2; }
+    .sns-btn[data-p="その他"]    i { color: var(--gray-400); }
+    .sns-btn.selected {
+      border-color: var(--red);
+      background: rgba(229,5,25,0.05);
+      color: var(--red);
+      box-shadow: 0 0 0 2px rgba(229,5,25,0.12);
+    }
+    .sns-btn.selected i { color: var(--red) !important; }
+
+    /* ============================================================
+       サブSNS
+    ============================================================ */
+    .sub-sns-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 36px;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .btn-rm-sub {
+      width: 36px; height: 36px;
+      background: var(--gray-100);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      color: var(--gray-400);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 12px;
+      transition: all 0.18s;
+    }
+    .btn-rm-sub:hover { background: rgba(229,5,25,0.08); color: var(--red); border-color: rgba(229,5,25,0.3); }
+    .btn-add-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: 1.5px dashed var(--gray-300);
+      border-radius: 8px;
+      background: none;
+      color: var(--gray-400);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: all 0.18s;
+      font-family: inherit;
+    }
+    .btn-add-sub:hover { border-color: var(--red); color: var(--red); }
+
+    /* 無料案件歓迎ボタン */
+    .price-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .price-input-row .finput {
+      flex: 1;
+      margin-top: 0;
+    }
+    .btn-free-case {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 14px;
+      height: 46px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--gray-300);
+      background: #fff;
+      color: var(--gray-600);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.18s;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .btn-free-case:hover {
+      border-color: #22a06b;
+      color: #22a06b;
+      background: #f0fdf7;
+    }
+    .btn-free-case.active {
+      border-color: #22a06b;
+      background: #22a06b;
+      color: #fff;
+    }
+    .btn-free-case.active:hover {
+      background: #1a8a59;
+      border-color: #1a8a59;
+    }
+    .finput:disabled {
+      background: var(--gray-50);
+      color: var(--gray-400);
+      cursor: not-allowed;
+    }
+
+    /* ============================================================
+       同意
+    ============================================================ */
+    .agree-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--gray-50);
+      border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-top: 24px;
+    }
+    .agree-row input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--red);
+      flex-shrink: 0; margin-top: 1px; cursor: pointer;
+    }
+    .agree-row label {
+      font-size: 12px;
+      color: var(--gray-500);
+      line-height: 1.65;
+      cursor: pointer;
+    }
+    .agree-row label strong { color: var(--gray-800); }
+
+    /* ============================================================
+       送信ボタン
+    ============================================================ */
+    .btn-submit-wrap { margin-top: 20px; position: relative; }
+    .btn-submit {
+      width: 100%;
+      padding: 17px;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 900;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+      box-shadow: 0 6px 20px rgba(229,5,25,0.28);
+    }
+    .btn-submit:hover { background: #c8031a; transform: translateY(-1px); box-shadow: 0 10px 28px rgba(229,5,25,0.35); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .submit-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 10px;
+    }
+
+    /* ============================================================
+       成功画面
+    ============================================================ */
+    .success-screen {
+      display: none;
+      padding: 48px 24px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .success-screen.show {
+      display: block;
+      animation: fadeUp 0.5s ease forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .success-plate {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 44px;
+      /* Cマークの5色グラデ */
+      background: conic-gradient(
+        var(--red)     0%   20%,
+        var(--green)  20%   40%,
+        var(--yellow) 40%   60%,
+        var(--blue)   60%   80%,
+        var(--magenta)80%  100%
+      );
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+    @keyframes popIn {
+      from { transform: scale(0); }
+      to   { transform: scale(1); }
+    }
+    .success-screen h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--gray-900);
+      margin-bottom: 10px;
+    }
+    .success-screen h2 span { color: var(--red); }
+    .success-screen p {
+      font-size: 14px;
+      color: var(--gray-500);
+      line-height: 1.7;
+      max-width: 300px;
+      margin: 0 auto 8px;
+    }
+    .success-id {
+      display: inline-block;
+      background: var(--gray-100);
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gray-400);
+      margin: 14px auto 28px;
+      letter-spacing: 0.06em;
+    }
+    .success-steps { text-align: left; max-width: 320px; margin: 0 auto; }
+    .s-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .s-step:last-child { border-bottom: none; }
+    .s-num {
+      width: 26px; height: 26px;
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 900;
+      flex-shrink: 0;
+    }
+    .s-num.n1 { background: var(--red); }
+    .s-num.n2 { background: var(--green); }
+    .s-num.n3 { background: var(--blue); }
+    .s-step p { font-size: 13px; color: var(--gray-500); line-height: 1.55; }
+    .s-step p strong { color: var(--gray-800); }
+
+    /* ============================================================
+       年齢確認ゲート（清潔感・白背景）
+    ============================================================ */
+    .age-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px 40px;
+      text-align: center;
+      animation: ageFadeIn 0.35s ease forwards;
+    }
+    .age-gate.hidden { display: none; }
+    @keyframes ageFadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ロゴ */
+    .age-gate-logo {
+      margin-bottom: 28px;
+    }
+    .age-gate-logo img {
+      width: 160px;
+      height: auto;
+      display: block;
+    }
+
+    /* 区切り線 */
+    .age-gate-divider {
+      width: 40px;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--red), var(--magenta));
+      margin: 0 auto 24px;
+    }
+
+    .age-gate-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .age-gate-lead {
+      font-size: 13px;
+      color: var(--gray-500);
+      line-height: 1.75;
+      margin-bottom: 32px;
+      max-width: 280px;
+    }
+
+    /* 選択ボタン */
+    .age-gate-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 310px;
+    }
+    .age-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 18px 10px;
+      border-radius: var(--radius-md);
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.18s;
+      min-height: 88px;
+    }
+    .age-tab:active { transform: scale(0.97); }
+    .age-tab-icon { font-size: 24px; line-height: 1; }
+    .age-tab-label {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .age-tab-sub {
+      font-size: 11px;
+      font-weight: 400;
+      line-height: 1.3;
+      opacity: 0.75;
+    }
+
+    /* 20歳以上ボタン：白地・赤ボーダー */
+    .age-tab.over {
+      background: #fff;
+      border-color: var(--red);
+      color: var(--red);
+      box-shadow: 0 2px 12px rgba(229,5,25,0.10);
+    }
+    .age-tab.over:hover {
+      background: rgba(229,5,25,0.05);
+      box-shadow: 0 4px 18px rgba(229,5,25,0.18);
+      transform: translateY(-1px);
+    }
+
+    /* 20歳未満ボタン：ライトグレー */
+    .age-tab.under {
+      background: var(--gray-50);
+      border-color: var(--gray-200);
+      color: var(--gray-400);
+    }
+    .age-tab.under:hover {
+      background: var(--gray-100);
+      border-color: var(--gray-300);
+    }
+
+    .age-gate-note {
+      font-size: 10.5px;
+      color: var(--gray-400);
+      margin-top: 20px;
+      max-width: 280px;
+      line-height: 1.65;
+    }
+
+    /* 未成年ブロック画面（白背景） */
+    .age-block {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #fff;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .age-block.show { display: flex; }
+    .age-block-logo {
+      margin-bottom: 28px;
+    }
+    .age-block-logo img {
+      width: 130px;
+      height: auto;
+      display: block;
+    }
+    .age-block-icon {
+      width: 68px; height: 68px;
+      border-radius: 50%;
+      background: var(--gray-100);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 18px;
+    }
+    .age-block-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 10px;
+    }
+    .age-block-lead {
+      font-size: 13px;
+      color: var(--gray-500);
+      line-height: 1.8;
+      max-width: 260px;
+    }
+    .age-block-lead strong { color: var(--gray-800); }
+
+    /* ============================================================
+       ローディング
+    ============================================================ */
+    .loading-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      justify-content: center; align-items: center;
+      flex-direction: column; gap: 16px;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid rgba(229,5,25,0.15);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay p { font-size: 13px; font-weight: 700; color: var(--red); }
+
+    /* ============================================================
+       フッター
+    ============================================================ */
+    .apply-footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 11px;
+      color: var(--gray-400);
+    }
+    .apply-footer a { color: var(--gray-400); }
+
+    /* ============================================================
+       レスポンシブ
+    ============================================================ */
+    @media (max-width: 360px) {
+      .sns-btn { padding: 10px 2px 8px; font-size: 9px; }
+      .sns-btn i { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     年齢確認ゲート（清潔感・白背景）
+============================================================ -->
+<div class="age-gate" id="age-gate" role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
+  <div class="age-gate-logo">
+    <img src="images/logo-collection.jpg" alt="Collection" loading="eager">
+  </div>
+  <div class="age-gate-divider"></div>
+  <p class="age-gate-title" id="age-gate-title">年齢確認</p>
+  <p class="age-gate-lead">居酒屋・バー・喫煙可能店舗などの<br>PR案件を取り扱っています。<br>法令遵守の観点から、20歳以上の方のみ<br>ご登録いただけます。</p>
+  <div class="age-gate-tabs">
+    <button class="age-tab over" onclick="agePass()" type="button">
+      <span class="age-tab-icon"><i class="fas fa-circle-check"></i></span>
+      <span class="age-tab-label">20歳以上</span>
+      <span class="age-tab-sub">申請に進む</span>
+    </button>
+    <button class="age-tab under" onclick="ageBlock()" type="button">
+      <span class="age-tab-icon"><i class="fas fa-circle-xmark"></i></span>
+      <span class="age-tab-label">20歳未満</span>
+      <span class="age-tab-sub">申請できません</span>
+    </button>
+  </div>
+  <p class="age-gate-note">虚偽の申告をした場合、登録を取り消す場合があります。</p>
+</div>
+
+<!-- 未成年ブロック画面 -->
+<div class="age-block" id="age-block" role="alert">
+  <div class="age-block-logo">
+    <img src="images/logo-collection.jpg" alt="Collection" loading="eager">
+  </div>
+  <div class="age-block-icon">🔞</div>
+  <p class="age-block-title">申請できません</p>
+  <p class="age-block-lead">申し訳ございません。<br>本サービスへの申請は<strong>20歳以上</strong>の方が対象です。<br><br>20歳になりましたら、<br>改めてご申請ください。</p>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <p>送信中...</p>
+</div>
+
+<!-- ============================================================
+     HERO
+============================================================ -->
+<header class="hero">
+  <!-- 料理写真グリッド 背景 -->
+  <div class="hero-bg" aria-hidden="true">
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/2097090/pexels-photo-2097090.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/769289/pexels-photo-769289.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/1099680/pexels-photo-1099680.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+    <div class="hero-bg-cell"><img src="https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400" alt="" loading="eager"></div>
+  </div>
+  <div class="hero-overlay" aria-hidden="true"></div>
+
+  <!-- Collection ロゴ -->
+  <div class="hero-logo" aria-label="Collection">
+    <img src="images/logo-collection.jpg" alt="Collection" style="width:90px;height:auto;display:block;">
+  </div>
+
+  <!-- コンテンツ -->
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <i class="fas fa-utensils"></i>
+      Gourmet Influencer
+    </div>
+    <h1>一緒に<em>食</em>の魅力を<br>届けませんか？</h1>
+    <p class="hero-lead">
+      グルメ案件を一緒に盛り上げてくれる<br>
+      インフルエンサーを募集しています。<br>
+      <strong>フォロワー3,000人〜歓迎！</strong>
+    </p>
+  </div>
+</header>
+
+<!-- Collectionブランド5色ストライプ -->
+<div class="color-stripe" aria-hidden="true">
+  <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<!-- ============================================================
+     FORM
+============================================================ -->
+<div class="form-outer">
+
+  <!-- 背景線画デコレーション（SVG） -->
+  <div class="deco-layer" aria-hidden="true">
+
+    <!-- 左上：花と葉のモチーフ（赤） -->
+    <svg class="form-deco-tl" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#E50519" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="60" cy="70" r="28"/>
+        <circle cx="60" cy="70" r="16"/>
+        <line x1="60" y1="98" x2="60" y2="148"/>
+        <path d="M60 120 Q40 108 28 118"/>
+        <path d="M60 132 Q78 120 90 128"/>
+        <ellipse cx="60" cy="42" rx="12" ry="18"/>
+        <ellipse cx="32" cy="56" rx="12" ry="18" transform="rotate(-50 32 56)"/>
+        <ellipse cx="88" cy="56" rx="12" ry="18" transform="rotate(50 88 56)"/>
+        <!-- スパーク -->
+        <path d="M110 20 L114 28 L122 30 L114 34 L110 42 L106 34 L98 30 L106 28 Z"/>
+      </g>
+    </svg>
+
+    <!-- 右上：ハートと曲線（マゼンタ） -->
+    <svg style="top:0;right:0;width:160px;height:160px;" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#E70682" stroke-width="2.2" fill="none" stroke-linecap="round">
+        <path d="M80 50 C80 50 60 30 40 46 C22 60 44 80 80 100 C116 80 138 60 120 46 C100 30 80 50 80 50Z"/>
+        <path d="M20 80 Q50 60 100 90 Q140 110 150 70"/>
+        <circle cx="130" cy="30" r="8"/>
+        <circle cx="130" cy="30" r="4"/>
+        <path d="M145 15 L148 20 L153 22 L148 24 L145 29 L142 24 L137 22 L142 20 Z"/>
+      </g>
+    </svg>
+
+    <!-- 左中：水滴と波（青） -->
+    <svg style="top:30%;left:0;width:100px;height:140px;" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#1C7CC2" stroke-width="2.2" fill="none" stroke-linecap="round">
+        <path d="M30 20 Q30 20 30 50 Q30 68 50 68 Q70 68 70 50 Q70 20 50 5 Q30 20 30 20Z" transform="translate(-10,0)"/>
+        <path d="M10 90 Q30 78 50 90 Q70 102 90 90"/>
+        <path d="M10 108 Q30 96 50 108 Q70 120 90 108"/>
+        <circle cx="75" cy="40" r="5"/>
+        <circle cx="85" cy="55" r="3"/>
+      </g>
+    </svg>
+
+    <!-- 右中：葉と小花（緑） -->
+    <svg style="top:35%;right:0;width:120px;height:160px;" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#0AA54A" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M100 20 Q120 60 90 90 Q60 60 100 20Z"/>
+        <line x1="100" y1="20" x2="90" y2="90"/>
+        <path d="M80 100 Q100 90 110 110 Q90 130 80 100Z"/>
+        <path d="M60 130 Q80 118 90 136 Q72 150 60 130Z"/>
+        <!-- 小さな円形装飾 -->
+        <circle cx="30" cy="50" r="12"/>
+        <circle cx="30" cy="50" r="6"/>
+        <line x1="30" y1="38" x2="30" y2="26"/>
+        <line x1="42" y1="50" x2="54" y2="50"/>
+        <line x1="18" y1="50" x2="6" y2="50"/>
+        <line x1="30" y1="62" x2="30" y2="74"/>
+      </g>
+    </svg>
+
+    <!-- 下部：波と食器モチーフ（黄） -->
+    <svg style="bottom:40px;left:50%;transform:translateX(-50%);width:340px;height:100px;" viewBox="0 0 340 100" xmlns="http://www.w3.org/2000/svg">
+      <g stroke="#F8DE00" stroke-width="2.5" fill="none" stroke-linecap="round">
+        <path d="M0 50 Q42 28 85 50 Q127 72 170 50 Q212 28 255 50 Q297 72 340 50"/>
+        <path d="M0 70 Q42 48 85 70 Q127 92 170 70 Q212 48 255 70 Q297 92 340 70"/>
+        <!-- フォーク -->
+        <line x1="20" y1="10" x2="20" y2="30"/>
+        <line x1="15" y1="10" x2="15" y2="20"/>
+        <line x1="25" y1="10" x2="25" y2="20"/>
+        <!-- スプーン -->
+        <ellipse cx="310" cy="16" rx="8" ry="12"/>
+        <line x1="310" y1="28" x2="310" y2="48"/>
+      </g>
+    </svg>
+
+  </div>
+
+  <main class="form-wrap" id="form-main">
+
+    <!-- ── 基本情報 ── -->
+    <div class="section-label">
+      <span class="slabel-dot" style="background:var(--red);"></span>
+      基本情報
+    </div>
+
+    <div class="fgroup">
+      <div class="flabel">アカウント名 <span class="req">必須</span></div>
+      <input type="text" id="f-name" class="finput"
+        placeholder="例：@hana_gourmet"
+        autocomplete="username" enterkeyhint="next">
+      <div class="ferr" id="e-name"><i class="fas fa-circle-exclamation"></i> 入力してください</div>
+    </div>
+
+    <div class="fgroup">
+      <div class="flabel">活動エリア <span class="req">必須</span> <span style="font-size:10px;font-weight:400;color:var(--gray-400);margin-left:4px;">複数選択可</span></div>
+      <!-- エリアチップウィジェット -->
+      <div class="aw-widget" id="f-region-widget" style="
+        border: 1.5px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 10px;
+        background: var(--gray-50);
+        max-height: 280px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      "></div>
+      <input type="hidden" id="f-region">
+      <div class="ferr" id="e-region"><i class="fas fa-circle-exclamation"></i> 少なくとも1つ選択してください</div>
+    </div>
+
+    <!-- ── SNS情報 ── -->
+    <div class="section-label" style="margin-top:28px;">
+      <span class="slabel-dot" style="background:var(--blue);"></span>
+      SNS情報
+    </div>
+
+    <div class="fgroup">
+      <div class="flabel">メインSNS <span class="req">必須</span></div>
+      <div class="sns-grid" id="sns-grid">
+        <button type="button" class="sns-btn" data-p="Instagram" onclick="pickSns(this)">
+          <i class="fab fa-instagram"></i>Instagram
+        </button>
+        <button type="button" class="sns-btn" data-p="TikTok" onclick="pickSns(this)">
+          <i class="fab fa-tiktok"></i>TikTok
+        </button>
+        <button type="button" class="sns-btn" data-p="YouTube" onclick="pickSns(this)">
+          <i class="fab fa-youtube"></i>YouTube
+        </button>
+        <button type="button" class="sns-btn" data-p="X(Twitter)" onclick="pickSns(this)">
+          <i class="fab fa-x-twitter"></i>X
+        </button>
+        <button type="button" class="sns-btn" data-p="その他" onclick="pickSns(this)">
+          <i class="fas fa-globe"></i>その他
+        </button>
+      </div>
+      <div class="ferr" id="e-sns" style="margin-top:6px;"><i class="fas fa-circle-exclamation"></i> 選択してください</div>
+    </div>
+
+    <div class="fgroup">
+      <div class="flabel">プロフィールURL <span class="req">必須</span></div>
+      <input type="url" id="f-sns-url" class="finput"
+        placeholder="https://www.instagram.com/username/"
+        autocomplete="off" enterkeyhint="next" inputmode="url">
+      <div class="ferr" id="e-sns-url"><i class="fas fa-circle-exclamation"></i> URLを入力してください</div>
+    </div>
+
+    <div class="fgroup">
+      <div class="flabel">フォロワー数 <span class="req">必須</span></div>
+      <input type="number" id="f-followers" class="finput"
+        placeholder="例：12000"
+        min="0" inputmode="numeric" enterkeyhint="next">
+      <div class="ferr" id="e-followers"><i class="fas fa-circle-exclamation"></i> フォロワー数を入力してください</div>
+      <p class="fhint">3,000フォロワー以上から申請できます</p>
+    </div>
+
+    <!-- サブSNS -->
+    <div class="fgroup">
+      <div class="flabel">サブSNS <span class="opt">任意・複数可</span></div>
+      <div id="sub-sns-list"></div>
+      <button type="button" class="btn-add-sub" onclick="addSubSns()">
+        <i class="fas fa-plus"></i> サブSNSを追加
+      </button>
+    </div>
+
+    <!-- 依頼単価 -->
+    <div class="fgroup" style="margin-top:14px;">
+      <div class="flabel">依頼単価の目安 <span class="req">必須</span></div>
+      <div class="price-input-row">
+        <button type="button" id="btn-free-case" class="btn-free-case" onclick="setFreeCase()">
+          <i class="fas fa-gift"></i> 無料案件歓迎
+        </button>
+        <input type="number" id="f-price-min" class="finput"
+          placeholder="例：10000" min="0" step="1000" inputmode="numeric" enterkeyhint="next">
+      </div>
+      <div class="ferr" id="e-price"><i class="fas fa-circle-exclamation"></i> 単価を入力してください</div>
+      <p class="fhint">円単位　※無料案件を受ける場合は「無料案件歓迎」ボタンを押してください</p>
+    </div>
+
+    <!-- 自己PR -->
+    <div class="fgroup">
+      <div class="flabel">自己PR・実績 <span class="opt">任意</span></div>
+      <textarea id="f-pr" class="ftextarea" rows="4"
+        placeholder="あなたのこと教えてください！&#10;例：グルメ特化で3年活動。タイアップ実績多数。エンゲージメント率8%以上です🍽️"></textarea>
+    </div>
+
+    <!-- 利用規約 -->
+    <div class="terms-wrap">
+      <button type="button" class="terms-toggle" id="terms-toggle" onclick="toggleTerms()">
+        <span><i class="fas fa-file-lines" style="color:var(--red);margin-right:6px;"></i>インフルエンサー登録 利用規約</span>
+        <span class="terms-toggle-icon" id="terms-toggle-icon"><i class="fas fa-chevron-down"></i></span>
+      </button>
+      <div class="terms-body" id="terms-body">
+
+        <div class="terms-section">
+          <h4>第1条 【登録について】</h4>
+          <p>登録手続きにあたり、入力するすべての情報は真実かつ正確であることを保証するものとします。虚偽の情報による登録が判明した場合、登録を取り消すことがあります。また、他の個人・法人へのなりすまし登録は固く禁じます。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第2条 【登録情報の変更】</h4>
+          <p>登録内容（SNSアカウント・活動地域・フォロワー数等）に変更が生じた場合は、速やかに担当者へご連絡ください。変更連絡を怠ったことによる不利益については、当社は責任を負いません。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第3条 【審査結果のご連絡】</h4>
+          <p>審査結果は、登録いただいたメインSNSアカウントへのメッセージ（DM）にてご連絡いたします。当社からの連絡が届かない場合や、SNSアカウントへ連絡が取れない状態が続く場合は、登録を取り消すことがあります。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第4条 【個人情報の取り扱い】</h4>
+          <p>ご入力いただいた個人情報は、インフルエンサーリスト管理および案件マッチング業務の目的にのみ使用します。法令に基づく場合を除き、第三者への提供は行いません。詳細は当社のプライバシーポリシーに従います。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第5条 【禁止事項】</h4>
+          <ul>
+            <li>虚偽の情報を登録する行為</li>
+            <li>他の個人・法人へのなりすまし行為</li>
+            <li>法令または公序良俗に違反する行為</li>
+            <li>犯罪行為に関連する行為</li>
+            <li>当社の業務を妨害するおそれのある行為</li>
+            <li>反社会的勢力への利益供与（直接・間接を問わず）</li>
+            <li>その他、当社が不適切と判断する行為</li>
+          </ul>
+        </div>
+
+        <div class="terms-section">
+          <h4>第6条 【反社会的勢力の排除】</h4>
+          <p>暴力団・暴力団員・暴力団準構成員・その他反社会的勢力に該当しないこと、また将来にわたっても該当しないことを表明し、確約するものとします。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第7条 【登録取り消し】</h4>
+          <p>以下に該当する場合、事前通知なく登録を取り消すことがあります。①本規約に違反した場合、②登録情報に虚偽が判明した場合、③当社からの連絡が長期間取れない場合、④その他、当社が不適切と判断した場合。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第8条 【免責事項】</h4>
+          <p>当社は、登録者が第三者との間で生じた紛争・損害について責任を負いません。また、登録=案件保証ではなく、案件が紹介されない場合であっても当社は責任を負いません。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第9条 【規約の変更】</h4>
+          <p>当社は必要に応じ、本規約を変更することができます。変更後の規約は、当社が適切と判断する方法で通知または公表します。</p>
+        </div>
+
+        <div class="terms-section">
+          <h4>第10条 【準拠法・裁判管轄】</h4>
+          <p>本規約の解釈には日本法を適用します。本規約に関して紛争が生じた場合、訴額に応じ大阪簡易裁判所または大阪地方裁判所を専属的合意管轄裁判所とします。</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 同意 -->
+    <div class="agree-row" style="margin-top:12px;">
+      <input type="checkbox" id="agree" name="agree">
+      <label for="agree">
+        <strong>上記の利用規約および個人情報の取り扱いに同意します。</strong><br>
+        入力内容はインフルエンサーリスト管理・案件マッチング業務にのみ使用します。審査結果は登録されたメインSNSのメッセージにてご連絡します。
+      </label>
+    </div>
+
+    <!-- 送信ボタン -->
+    <div class="btn-submit-wrap">
+      <button class="btn-submit" id="btn-submit" onclick="submitForm()">
+        <i class="fas fa-paper-plane"></i>
+        申請する
+      </button>
+    </div>
+    <p class="submit-note">無料 · 所要約2分</p>
+
+  </main>
+</div><!-- /.form-outer -->
+
+<!-- ============================================================
+     SUCCESS
+============================================================ -->
+<div class="success-screen form-wrap" id="success-screen">
+  <div class="success-plate">🎉</div>
+  <h2>申請<span>完了</span>！</h2>
+  <p>ありがとうございます。<br>担当者が内容を確認のうえ、<br>審査結果をご連絡いたします。</p>
+  <p style="font-size:12px;">登録されたメインSNSのメッセージにてご連絡します</p>
+  <div class="success-id" id="success-id">申請ID: —</div>
+  <div class="success-steps">
+    <div class="s-step">
+      <div class="s-num n1">1</div>
+      <p><strong>申請内容を確認</strong>（3〜7営業日）</p>
+    </div>
+    <div class="s-step">
+      <div class="s-num n2">2</div>
+      <p><strong>審査結果をメインSNSのDMでご連絡</strong></p>
+    </div>
+    <div class="s-step">
+      <div class="s-num n3">3</div>
+      <p><strong>承認後</strong>、グルメ案件をご紹介します🍽️</p>
+    </div>
+  </div>
+</div>
+
+<!-- 下部ストライプ -->
+<div class="color-stripe" aria-hidden="true">
+  <span></span><span></span><span></span><span></span><span></span>
+</div>
+
+<footer class="apply-footer">
+  © 2025 Collection Co., Ltd. All Rights Reserved.
+  <a href="#" onclick="return false;"> プライバシーポリシー</a>
+</footer>
+
+<script>
+  /* ── 年齢確認ゲート ── */
+  function agePass() {
+    document.getElementById('age-gate').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  function ageBlock() {
+    document.getElementById('age-gate').classList.add('hidden');
+    document.getElementById('age-block').classList.add('show');
+  }
+  // ゲート表示中はスクロール禁止
+  document.body.style.overflow = 'hidden';
+
+  let _sns      = '';
+  let _subSns   = [];
+
+  function toggleTerms() {
+    const btn  = document.getElementById('terms-toggle');
+    const body = document.getElementById('terms-body');
+    const open = body.classList.toggle('open');
+    btn.classList.toggle('open', open);
+  }
+
+  function pickSns(btn) {
+    document.querySelectorAll('.sns-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    _sns = btn.dataset.p;
+    document.getElementById('e-sns').classList.remove('show');
+  }
+
+  function setFreeCase() {
+    const input = document.getElementById('f-price-min');
+    const btn   = document.getElementById('btn-free-case');
+    const isActive = btn.classList.contains('active');
+    if (isActive) {
+      // 解除
+      input.value = '';
+      input.disabled = false;
+      input.placeholder = '例：10000';
+      btn.classList.remove('active');
+      btn.innerHTML = '<i class="fas fa-gift"></i> 無料案件歓迎';
+    } else {
+      // 有効化
+      input.value = 0;
+      input.disabled = true;
+      btn.classList.add('active');
+      btn.innerHTML = '<i class="fas fa-check"></i> 無料案件歓迎';
+      // エラー表示をクリア
+      document.getElementById('e-price').classList.remove('show');
+      input.classList.remove('error');
+    }
+  }
+
+  function addSubSns() {
+    _subSns.push({ id: Date.now(), platform: '', url: '' });
+    renderSubSns();
+  }
+  function removeSubSns(id) {
+    _subSns = _subSns.filter(s => s.id !== id);
+    renderSubSns();
+  }
+  function renderSubSns() {
+    document.getElementById('sub-sns-list').innerHTML = _subSns.map(s => `
+      <div class="sub-sns-row">
+        <select class="fselect" style="font-size:13px;padding:10px 8px;"
+          onchange="updSub(${s.id},'platform',this.value)">
+          <option value="">SNS</option>
+          ${['Instagram','TikTok','YouTube','X(Twitter)','その他']
+            .map(p => `<option ${s.platform===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+        <input type="url" class="finput" style="font-size:13px;padding:10px 12px;"
+          value="${s.url}" placeholder="https://..."
+          oninput="updSub(${s.id},'url',this.value)">
+        <button class="btn-rm-sub" onclick="removeSubSns(${s.id})" type="button">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    `).join('');
+  }
+  function updSub(id, field, val) {
+    const item = _subSns.find(s => s.id === id);
+    if (item) item[field] = val;
+  }
+
+  function validate() {
+    let ok = true;
+    const chk = (inputId, errId, cond) => {
+      const inp = document.getElementById(inputId);
+      const err = document.getElementById(errId);
+      if (!cond) {
+        err.classList.add('show'); inp.classList.add('error');
+        if (ok) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); ok = false; }
+      } else {
+        err.classList.remove('show'); inp.classList.remove('error');
+      }
+    };
+
+    chk('f-name',   'e-name',   document.getElementById('f-name').value.trim() !== '');
+    // エリアチップ: hidden input の値チェック
+    const regionVal = document.getElementById('f-region').value.trim();
+    const regionWidget = document.getElementById('f-region-widget');
+    if (!regionVal) {
+      document.getElementById('e-region').classList.add('show');
+      regionWidget.style.borderColor = 'var(--red)';
+      regionWidget.style.boxShadow   = '0 0 0 3px rgba(229,5,25,0.10)';
+      if (ok) { regionWidget.scrollIntoView({ behavior: 'smooth', block: 'center' }); ok = false; }
+    } else {
+      document.getElementById('e-region').classList.remove('show');
+      regionWidget.style.borderColor = '';
+      regionWidget.style.boxShadow   = '';
+    }
+
+    if (!_sns) {
+      document.getElementById('e-sns').classList.add('show');
+      if (ok) { document.getElementById('sns-grid').scrollIntoView({ behavior: 'smooth', block: 'center' }); ok = false; }
+    } else {
+      document.getElementById('e-sns').classList.remove('show');
+    }
+
+    chk('f-sns-url', 'e-sns-url', document.getElementById('f-sns-url').value.trim() !== '');
+
+    const followers = parseInt(document.getElementById('f-followers').value) || 0;
+    const fErr = document.getElementById('e-followers');
+    const fInp = document.getElementById('f-followers');
+    if (!document.getElementById('f-followers').value || followers < 3000) {
+      fErr.classList.add('show');
+      fErr.innerHTML = followers > 0 && followers < 3000
+        ? '<i class="fas fa-circle-exclamation"></i> 3,000フォロワー以上から申請できます'
+        : '<i class="fas fa-circle-exclamation"></i> フォロワー数を入力してください';
+      fInp.classList.add('error');
+      if (ok) { fInp.scrollIntoView({ behavior: 'smooth', block: 'center' }); ok = false; }
+    } else {
+      fErr.classList.remove('show'); fInp.classList.remove('error');
+    }
+
+    const priceVal = document.getElementById('f-price-min').value;
+    chk('f-price-min', 'e-price', priceVal !== '' && priceVal !== null);
+    return ok;
+  }
+
+  async function submitForm() {
+    if (!validate()) return;
+    if (!document.getElementById('agree').checked) {
+      alert('利用規約・個人情報の取り扱いへの同意が必要です。'); return;
+    }
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    document.getElementById('loading-overlay').classList.add('show');
+
+    const subSnsData = _subSns.filter(s => s.platform && s.url).map(s => ({ platform: s.platform, url: s.url }));
+    const payload = {
+      name:       document.getElementById('f-name').value.trim(),
+      region:     document.getElementById('f-region').value.trim(),
+      genre:      'グルメ・料理',
+      sns_main:   _sns,
+      sns_url:    document.getElementById('f-sns-url').value.trim(),
+      followers:  parseInt(document.getElementById('f-followers').value) || 0,
+      sub_sns:    subSnsData,
+      price_min:  document.getElementById('f-price-min').value !== '' ? parseInt(document.getElementById('f-price-min').value) : 0,
+      pr_text:    document.getElementById('f-pr').value.trim(),
+      status:     'pending',
+      applied_at: Date.now(),
+    };
+
+    try {
+      const res = await fetch('tables/influencer_applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Status ' + res.status);
+      const data = await res.json();
+
+      document.getElementById('loading-overlay').classList.remove('show');
+      document.getElementById('form-main').style.display = 'none';
+      document.querySelector('.form-outer').style.background = '#fff';
+      const ss = document.getElementById('success-screen');
+      ss.classList.add('show');
+      document.getElementById('success-id').textContent =
+        '申請ID: ' + (data.id || '').substring(0, 8).toUpperCase();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (err) {
+      document.getElementById('loading-overlay').classList.remove('show');
+      btn.disabled = false;
+      alert('送信に失敗しました。\n' + err.message + '\n\nもう一度お試しください。');
+    }
+  }
+
+  document.querySelectorAll('.finput, .fselect, .ftextarea').forEach(el => {
+    el.addEventListener('input',  () => el.classList.remove('error'));
+    el.addEventListener('change', () => el.classList.remove('error'));
+  });
+
+  // ── 活動エリアウィジェット ────────────────────────────
+  const INF_AREA_MAP = {
+    '北海道・東北':    ['北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島'],
+    '関東':            ['東京', '神奈川', '埼玉', '千葉', '茨城', '栃木', '群馬'],
+    '中部':            ['新潟', '富山', '石川', '福井', '山梨', '長野', '岐阜', '静岡', '愛知'],
+    '関西':            ['三重', '滋賀', '京都', '大阪', '兵庫', '奈良', '和歌山'],
+    '中国・四国':      ['鳥取', '島根', '岡山', '広島', '山口', '徳島', '香川', '愛媛', '高知'],
+    '九州・沖縄':      ['福岡', '佐賀', '長崎', '熊本', '大分', '宮崎', '鹿児島', '沖縄'],
+    '全国・オンライン':['全国', 'オンライン'],
+  };
+
+  (function initAreaWidget() {
+    const wrap    = document.getElementById('f-region-widget');
+    const hidden  = document.getElementById('f-region');
+    if (!wrap) return;
+
+    const selected = new Set();
+
+    function updateState() {
+      // hidden input に選択値をセット
+      hidden.value = [...selected].join(', ');
+
+      // 各チップの ON/OFF
+      wrap.querySelectorAll('.aw-pref-btn').forEach(b => {
+        b.classList.toggle('aw-pref-btn--on', selected.has(b.dataset.val));
+      });
+      // 地方ヘッダの「一括」ボタン ON/OFF
+      wrap.querySelectorAll('.aw-region-hd').forEach(hd => {
+        const region = hd.dataset.region;
+        const prefs  = INF_AREA_MAP[region] || [];
+        const allOn  = prefs.length > 0 && prefs.every(p => selected.has(p));
+        hd.querySelector('.aw-region-all').classList.toggle('aw-region-all--on', allOn);
+      });
+      // エラー表示を即時リセット
+      if (selected.size > 0) {
+        document.getElementById('e-region').classList.remove('show');
+        wrap.style.borderColor = '';
+        wrap.style.boxShadow   = '';
+      }
+    }
+
+    // ウィジェットHTML構築
+    wrap.innerHTML = Object.keys(INF_AREA_MAP).map(region => {
+      const prefs = INF_AREA_MAP[region];
+      return `
+        <div class="aw-region">
+          <div class="aw-region-hd" data-region="${region}">
+            <span class="aw-region-name">${region}</span>
+            <button type="button" class="aw-region-all" data-region="${region}">一括</button>
+          </div>
+          <div class="aw-prefs">
+            ${prefs.map(p => `<button type="button" class="aw-pref-btn" data-val="${p}">${p}</button>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+
+    // 都道府県クリック
+    wrap.querySelectorAll('.aw-pref-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.val;
+        selected.has(v) ? selected.delete(v) : selected.add(v);
+        updateState();
+      });
+    });
+    // 地方一括
+    wrap.querySelectorAll('.aw-region-all').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const prefs = INF_AREA_MAP[btn.dataset.region] || [];
+        const allOn = prefs.every(p => selected.has(p));
+        if (allOn) { prefs.forEach(p => selected.delete(p)); }
+        else        { prefs.forEach(p => selected.add(p)); }
+        updateState();
+      });
+    });
+  })();
+</script>
+</body>
+</html>
